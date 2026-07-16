@@ -8,11 +8,17 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.security.core.AuthenticationException;
 
 import java.net.URI;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
+
+    @ExceptionHandler(AuthenticationException.class)
+    ProblemDetail handleAuthentication(HttpServletRequest request) {
+        return problem(HttpStatus.UNAUTHORIZED, "Authentication failed", "Invalid username or password", request);
+    }
 
     @ExceptionHandler(TicketNotFoundException.class)
     ProblemDetail handleNotFound(TicketNotFoundException exception, HttpServletRequest request) {

@@ -27,6 +27,16 @@ springdoc:
     operations-sorter: method
     tags-sorter: alpha
 
+security:
+  jwt:
+    secret: ${JWT_SECRET:local-development-jwt-secret-change-me}
+    access-token-ttl: ${JWT_ACCESS_TOKEN_TTL:30m}
+
+bootstrap:
+  admin:
+    username: ${ADMIN_USERNAME:admin}
+    password: ${ADMIN_PASSWORD:Admin123!}
+
 management:
   endpoints:
     web:

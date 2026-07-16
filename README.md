@@ -9,6 +9,8 @@ business boundaries remain explicit without adding distributed-system overhead t
 - Ticket creation, lookup, pagination, and controlled status transitions
 - MySQL schema managed by Flyway
 - Optimistic locking on ticket updates
+- Database-backed users with BCrypt password hashing
+- Stateless JWT authentication and role-based access control
 - RFC 9457 problem responses for API errors
 - Actuator health and metrics endpoints
 
@@ -21,19 +23,32 @@ docker compose up -d mysql
 mvn spring-boot:run
 ```
 
-Create a ticket:
+The local development administrator is `admin` / `Admin123!`. Override it with the
+`ADMIN_USERNAME` and `ADMIN_PASSWORD` environment variables outside local development.
+
+Log in and copy the `accessToken` from the response:
 
 ```bash
-curl -X POST http://localhost:8080/api/v1/tickets \
+curl -X POST http://localhost:8081/api/v1/auth/login \
   -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"Admin123!"}'
+```
+
+Create a ticket using the returned token:
+
+```bash
+curl -X POST http://localhost:8081/api/v1/tickets \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <access-token>" \
   -d '{"title":"VPN unavailable","description":"The whole team cannot connect","priority":"P1"}'
 ```
 
 Start work on ticket 1:
 
 ```bash
-curl -X PATCH http://localhost:8080/api/v1/tickets/1/status \
+curl -X PATCH http://localhost:8081/api/v1/tickets/1/status \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <access-token>" \
   -d '{"status":"IN_PROGRESS"}'
 ```
 
@@ -57,5 +72,5 @@ OpenAPI JSON URL. Use the same URL later to synchronize API changes.
 ## Planned modules
 
 `identity`, `ticket`, `knowledge`, `ai`, `notification`, and `analytics`. The next milestone adds
-authentication and RBAC, ticket comments and audit events. RAG ingestion and model integration follow
+ticket comments and audit events. RAG ingestion and model integration follow
 after the core workflow is reliable.
