@@ -3,5 +3,6 @@ target/
 *.iml
 .vscode/
 .env
+.agents/
 data/
 *.log

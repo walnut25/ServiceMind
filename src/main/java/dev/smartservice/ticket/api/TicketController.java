@@ -17,6 +17,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -41,6 +42,7 @@ public class TicketController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasAnyRole('ADMIN', 'AGENT', 'REQUESTER')")
     @Operation(summary = "Create a ticket", description = "Creates a ticket in OPEN status")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Ticket created"),
@@ -51,6 +53,7 @@ public class TicketController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'AGENT', 'REQUESTER')")
     @Operation(summary = "Get a ticket")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Ticket found"),
@@ -61,12 +64,14 @@ public class TicketController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'AGENT', 'REQUESTER')")
     @Operation(summary = "List tickets", description = "Returns a pageable ticket list")
     public Page<TicketResponse> list(@PageableDefault(size = 20) Pageable pageable) {
         return service.list(pageable).map(TicketResponse::from);
     }
 
     @PatchMapping("/{id}/status")
+    @PreAuthorize("hasAnyRole('ADMIN', 'AGENT')")
     @Operation(summary = "Transition ticket status",
             description = "Allowed workflow: OPEN -> IN_PROGRESS -> RESOLVED -> CLOSED")
     @ApiResponses({
