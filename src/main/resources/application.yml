@@ -37,6 +37,15 @@ bootstrap:
     username: ${ADMIN_USERNAME:admin}
     password: ${ADMIN_PASSWORD:Admin123!}
 
+ai:
+  chat:
+    enabled: ${AI_CHAT_ENABLED:false}
+    base-url: ${AI_BASE_URL:https://api.deepseek.com}
+    api-key: ${AI_API_KEY:}
+    model: ${AI_MODEL:deepseek-chat}
+    timeout: ${AI_TIMEOUT:30s}
+    max-context-articles: ${AI_MAX_CONTEXT_ARTICLES:3}
+
 management:
   endpoints:
     web:

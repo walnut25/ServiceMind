@@ -1,5 +1,7 @@
 package dev.smartservice.common.api;
 
+import dev.smartservice.ai.application.AiNotConfiguredException;
+import dev.smartservice.ai.application.AiProviderException;
 import dev.smartservice.knowledge.application.KnowledgeArticleNotFoundException;
 import dev.smartservice.knowledge.domain.InvalidArticleStateException;
 import dev.smartservice.ticket.application.TicketNotFoundException;
@@ -21,6 +23,16 @@ public class ApiExceptionHandler {
     @ExceptionHandler(AuthenticationException.class)
     ProblemDetail handleAuthentication(HttpServletRequest request) {
         return problem(HttpStatus.UNAUTHORIZED, "Authentication failed", "Invalid username or password", request);
+    }
+
+    @ExceptionHandler(AiNotConfiguredException.class)
+    ProblemDetail handleAiNotConfigured(AiNotConfiguredException exception, HttpServletRequest request) {
+        return problem(HttpStatus.SERVICE_UNAVAILABLE, "AI service is not configured", exception.getMessage(), request);
+    }
+
+    @ExceptionHandler(AiProviderException.class)
+    ProblemDetail handleAiProvider(AiProviderException exception, HttpServletRequest request) {
+        return problem(HttpStatus.BAD_GATEWAY, "AI provider error", exception.getMessage(), request);
     }
 
     @ExceptionHandler(TicketNotFoundException.class)
