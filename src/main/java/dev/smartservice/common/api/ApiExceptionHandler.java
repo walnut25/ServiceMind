@@ -1,8 +1,11 @@
 package dev.smartservice.common.api;
 
+import dev.smartservice.knowledge.application.KnowledgeArticleNotFoundException;
+import dev.smartservice.knowledge.domain.InvalidArticleStateException;
 import dev.smartservice.ticket.application.TicketNotFoundException;
 import dev.smartservice.ticket.domain.InvalidTicketTransitionException;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -25,6 +28,16 @@ public class ApiExceptionHandler {
         return problem(HttpStatus.NOT_FOUND, "Ticket not found", exception.getMessage(), request);
     }
 
+    @ExceptionHandler(KnowledgeArticleNotFoundException.class)
+    ProblemDetail handleArticleNotFound(KnowledgeArticleNotFoundException exception, HttpServletRequest request) {
+        return problem(HttpStatus.NOT_FOUND, "Knowledge article not found", exception.getMessage(), request);
+    }
+
+    @ExceptionHandler(InvalidArticleStateException.class)
+    ProblemDetail handleInvalidArticleState(InvalidArticleStateException exception, HttpServletRequest request) {
+        return problem(HttpStatus.CONFLICT, "Invalid article state", exception.getMessage(), request);
+    }
+
     @ExceptionHandler(InvalidTicketTransitionException.class)
     ProblemDetail handleInvalidTransition(InvalidTicketTransitionException exception, HttpServletRequest request) {
         return problem(HttpStatus.CONFLICT, "Invalid ticket transition", exception.getMessage(), request);
@@ -34,6 +47,15 @@ public class ApiExceptionHandler {
     ProblemDetail handleValidation(MethodArgumentNotValidException exception, HttpServletRequest request) {
         String detail = exception.getBindingResult().getFieldErrors().stream()
                 .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .findFirst()
+                .orElse("Request validation failed");
+        return problem(HttpStatus.BAD_REQUEST, "Invalid request", detail, request);
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    ProblemDetail handleConstraintViolation(ConstraintViolationException exception, HttpServletRequest request) {
+        String detail = exception.getConstraintViolations().stream()
+                .map(violation -> violation.getPropertyPath() + ": " + violation.getMessage())
                 .findFirst()
                 .orElse("Request validation failed");
         return problem(HttpStatus.BAD_REQUEST, "Invalid request", detail, request);

@@ -2,6 +2,9 @@ package dev.smartservice.ticket.api;
 
 import dev.smartservice.ticket.application.TicketService;
 import dev.smartservice.ticket.domain.Ticket;
+import dev.smartservice.ticket.domain.TicketAuditEvent;
+import dev.smartservice.ticket.domain.TicketAuditEventType;
+import dev.smartservice.ticket.domain.TicketComment;
 import dev.smartservice.ticket.domain.TicketPriority;
 import dev.smartservice.ticket.domain.TicketStatus;
 import jakarta.validation.Valid;
@@ -15,9 +18,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -48,8 +53,9 @@ public class TicketController {
             @ApiResponse(responseCode = "201", description = "Ticket created"),
             @ApiResponse(responseCode = "400", description = "Request validation failed")
     })
-    public TicketResponse create(@Valid @RequestBody CreateTicketRequest request) {
-        return TicketResponse.from(service.create(request.title(), request.description(), request.priority()));
+    public TicketResponse create(@Valid @RequestBody CreateTicketRequest request, Authentication authentication) {
+        return TicketResponse.from(service.create(request.title(), request.description(), request.priority(),
+                authentication.getName()));
     }
 
     @GetMapping("/{id}")
@@ -79,8 +85,34 @@ public class TicketController {
             @ApiResponse(responseCode = "404", description = "Ticket not found"),
             @ApiResponse(responseCode = "409", description = "Status transition is not allowed")
     })
-    public TicketResponse transition(@PathVariable long id, @Valid @RequestBody TransitionTicketRequest request) {
-        return TicketResponse.from(service.transition(id, request.status()));
+    public TicketResponse transition(@PathVariable long id, @Valid @RequestBody TransitionTicketRequest request,
+                                     Authentication authentication) {
+        return TicketResponse.from(service.transition(id, request.status(), authentication.getName()));
+    }
+
+    @PostMapping("/{id}/comments")
+    @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasAnyRole('ADMIN', 'AGENT', 'REQUESTER')")
+    @Operation(summary = "Add a ticket comment")
+    public CommentResponse addComment(@PathVariable long id, @Valid @RequestBody AddCommentRequest request,
+                                      Authentication authentication) {
+        return CommentResponse.from(service.addComment(id, request.content(), authentication.getName()));
+    }
+
+    @GetMapping("/{id}/comments")
+    @PreAuthorize("hasAnyRole('ADMIN', 'AGENT', 'REQUESTER')")
+    @Operation(summary = "List ticket comments")
+    public Page<CommentResponse> listComments(@PathVariable long id,
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.ASC) Pageable pageable) {
+        return service.listComments(id, pageable).map(CommentResponse::from);
+    }
+
+    @GetMapping("/{id}/audit-events")
+    @PreAuthorize("hasAnyRole('ADMIN', 'AGENT')")
+    @Operation(summary = "List ticket audit events")
+    public Page<AuditEventResponse> listAuditEvents(@PathVariable long id,
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return service.listAuditEvents(id, pageable).map(AuditEventResponse::from);
     }
 
     public record CreateTicketRequest(
@@ -95,6 +127,26 @@ public class TicketController {
     public record TransitionTicketRequest(
             @Schema(description = "Target status", example = "IN_PROGRESS")
             @NotNull TicketStatus status) {
+    }
+
+    public record AddCommentRequest(
+            @Schema(description = "Comment text", example = "Investigating the VPN gateway logs")
+            @NotBlank @Size(max = 10_000) String content) {
+    }
+
+    public record CommentResponse(long id, long ticketId, String authorUsername, String content, Instant createdAt) {
+        static CommentResponse from(TicketComment comment) {
+            return new CommentResponse(comment.getId(), comment.getTicketId(), comment.getAuthorUsername(),
+                    comment.getContent(), comment.getCreatedAt());
+        }
+    }
+
+    public record AuditEventResponse(long id, long ticketId, TicketAuditEventType eventType,
+                                     String actorUsername, String details, Instant createdAt) {
+        static AuditEventResponse from(TicketAuditEvent event) {
+            return new AuditEventResponse(event.getId(), event.getTicketId(), event.getEventType(),
+                    event.getActorUsername(), event.getDetails(), event.getCreatedAt());
+        }
     }
 
     public record TicketResponse(long id, String title, String description, TicketPriority priority,
