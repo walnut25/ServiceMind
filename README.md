@@ -11,6 +11,8 @@ business boundaries remain explicit without adding distributed-system overhead t
 - Optimistic locking on ticket updates
 - Database-backed users with BCrypt password hashing
 - Stateless JWT authentication and role-based access control
+- Ticket comments with authenticated authors
+- Immutable audit trail for ticket creation, status changes, and comments
 - RFC 9457 problem responses for API errors
 - Actuator health and metrics endpoints
 
@@ -72,5 +74,5 @@ OpenAPI JSON URL. Use the same URL later to synchronize API changes.
 ## Planned modules
 
 `identity`, `ticket`, `knowledge`, `ai`, `notification`, and `analytics`. The next milestone adds
-ticket comments and audit events. RAG ingestion and model integration follow
+knowledge articles and search as the foundation for RAG. Model integration follows
 after the core workflow is reliable.
