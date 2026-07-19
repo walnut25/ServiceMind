@@ -73,6 +73,23 @@ http://localhost:8081/swagger-ui.html
 In Apifox, create or open a project, choose **Import Data**, select **URL Import**, and enter the
 OpenAPI JSON URL. Use the same URL later to synchronize API changes.
 
+## Tests
+
+Run the complete test suite with:
+
+```bash
+mvn clean test
+```
+
+API security and unit tests run without external services. Repository integration tests use
+Testcontainers with MySQL 8.4 and require Docker:
+
+```bash
+mvn verify -Pintegration
+```
+
+Container tests are skipped when the integration profile is used without an available Docker service.
+
 ## AI configuration
 
 The AI assistant uses an OpenAI-compatible chat API. It defaults to DeepSeek but remains disabled until
