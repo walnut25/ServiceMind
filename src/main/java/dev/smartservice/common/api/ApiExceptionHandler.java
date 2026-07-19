@@ -5,6 +5,7 @@ import dev.smartservice.ai.application.AiProviderException;
 import dev.smartservice.knowledge.application.KnowledgeArticleNotFoundException;
 import dev.smartservice.knowledge.domain.InvalidArticleStateException;
 import dev.smartservice.ticket.application.TicketNotFoundException;
+import dev.smartservice.ticket.application.InvalidTicketAssigneeException;
 import dev.smartservice.ticket.domain.InvalidTicketTransitionException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
@@ -53,6 +54,11 @@ public class ApiExceptionHandler {
     @ExceptionHandler(InvalidTicketTransitionException.class)
     ProblemDetail handleInvalidTransition(InvalidTicketTransitionException exception, HttpServletRequest request) {
         return problem(HttpStatus.CONFLICT, "Invalid ticket transition", exception.getMessage(), request);
+    }
+
+    @ExceptionHandler(InvalidTicketAssigneeException.class)
+    ProblemDetail handleInvalidAssignee(InvalidTicketAssigneeException exception, HttpServletRequest request) {
+        return problem(HttpStatus.UNPROCESSABLE_ENTITY, "Invalid ticket assignee", exception.getMessage(), request);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

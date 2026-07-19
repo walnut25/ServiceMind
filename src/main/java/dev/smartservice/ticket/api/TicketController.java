@@ -23,17 +23,20 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Instant;
 
+@Validated
 @RestController
 @RequestMapping("/api/v1/tickets")
 @Tag(name = "Tickets", description = "Create, query, and transition support tickets")
@@ -65,15 +68,22 @@ public class TicketController {
             @ApiResponse(responseCode = "200", description = "Ticket found"),
             @ApiResponse(responseCode = "404", description = "Ticket not found")
     })
-    public TicketResponse get(@PathVariable long id) {
-        return TicketResponse.from(service.get(id));
+    public TicketResponse get(@PathVariable long id, Authentication authentication) {
+        return TicketResponse.from(service.getVisible(id, authentication.getName(), canManage(authentication)));
     }
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'AGENT', 'REQUESTER')")
-    @Operation(summary = "List tickets", description = "Returns a pageable ticket list")
-    public Page<TicketResponse> list(@PageableDefault(size = 20) Pageable pageable) {
-        return service.list(pageable).map(TicketResponse::from);
+    @Operation(summary = "List tickets",
+            description = "Filters by status, priority, or assignee. Requesters only see their own tickets.")
+    public Page<TicketResponse> list(
+            @RequestParam(required = false) TicketStatus status,
+            @RequestParam(required = false) TicketPriority priority,
+            @RequestParam(required = false) @Size(max = 100) String assignee,
+            @PageableDefault(size = 20) Pageable pageable,
+            Authentication authentication) {
+        return service.list(status, priority, assignee, authentication.getName(), canManage(authentication), pageable)
+                .map(TicketResponse::from);
     }
 
     @PatchMapping("/{id}/status")
@@ -90,21 +100,33 @@ public class TicketController {
         return TicketResponse.from(service.transition(id, request.status(), authentication.getName()));
     }
 
+    @PatchMapping("/{id}/assignee")
+    @PreAuthorize("hasAnyRole('ADMIN', 'AGENT')")
+    @Operation(summary = "Assign a ticket",
+            description = "Assigns the ticket to an enabled administrator or agent account")
+    public TicketResponse assign(@PathVariable long id, @Valid @RequestBody AssignTicketRequest request,
+                                 Authentication authentication) {
+        return TicketResponse.from(service.assign(id, request.username(), authentication.getName()));
+    }
+
     @PostMapping("/{id}/comments")
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasAnyRole('ADMIN', 'AGENT', 'REQUESTER')")
     @Operation(summary = "Add a ticket comment")
     public CommentResponse addComment(@PathVariable long id, @Valid @RequestBody AddCommentRequest request,
                                       Authentication authentication) {
-        return CommentResponse.from(service.addComment(id, request.content(), authentication.getName()));
+        return CommentResponse.from(service.addComment(id, request.content(), authentication.getName(),
+                canManage(authentication)));
     }
 
     @GetMapping("/{id}/comments")
     @PreAuthorize("hasAnyRole('ADMIN', 'AGENT', 'REQUESTER')")
     @Operation(summary = "List ticket comments")
     public Page<CommentResponse> listComments(@PathVariable long id,
-            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.ASC) Pageable pageable) {
-        return service.listComments(id, pageable).map(CommentResponse::from);
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.ASC) Pageable pageable,
+            Authentication authentication) {
+        return service.listComments(id, authentication.getName(), canManage(authentication), pageable)
+                .map(CommentResponse::from);
     }
 
     @GetMapping("/{id}/audit-events")
@@ -129,6 +151,11 @@ public class TicketController {
             @NotNull TicketStatus status) {
     }
 
+    public record AssignTicketRequest(
+            @Schema(description = "Username of an enabled administrator or agent", example = "agent-one")
+            @NotBlank @Size(max = 100) String username) {
+    }
+
     public record AddCommentRequest(
             @Schema(description = "Comment text", example = "Investigating the VPN gateway logs")
             @NotBlank @Size(max = 10_000) String content) {
@@ -150,11 +177,18 @@ public class TicketController {
     }
 
     public record TicketResponse(long id, String title, String description, TicketPriority priority,
-                                 TicketStatus status, Instant createdAt, Instant updatedAt, long version) {
+                                 TicketStatus status, String requesterUsername, String assigneeUsername,
+                                 Instant createdAt, Instant updatedAt, long version) {
         static TicketResponse from(Ticket ticket) {
             return new TicketResponse(ticket.getId(), ticket.getTitle(), ticket.getDescription(),
-                    ticket.getPriority(), ticket.getStatus(), ticket.getCreatedAt(), ticket.getUpdatedAt(),
-                    ticket.getVersion());
+                    ticket.getPriority(), ticket.getStatus(), ticket.getRequesterUsername(),
+                    ticket.getAssigneeUsername(), ticket.getCreatedAt(), ticket.getUpdatedAt(), ticket.getVersion());
         }
+    }
+
+    private boolean canManage(Authentication authentication) {
+        return authentication.getAuthorities().stream()
+                .map(authority -> authority.getAuthority())
+                .anyMatch(authority -> authority.equals("ROLE_ADMIN") || authority.equals("ROLE_AGENT"));
     }
 }
