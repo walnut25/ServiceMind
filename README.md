@@ -1,5 +1,7 @@
 # Smart Service
 
+[![CI](https://github.com/walnut25/ServiceMind/actions/workflows/ci.yml/badge.svg)](https://github.com/walnut25/ServiceMind/actions/workflows/ci.yml)
+
 AI-assisted enterprise ticket and knowledge platform. The project starts as a modular monolith so its
 business boundaries remain explicit without adding distributed-system overhead too early.
 
@@ -99,6 +101,8 @@ mvn verify -Pintegration
 ```
 
 Container tests are skipped when the integration profile is used without an available Docker service.
+GitHub Actions runs the complete suite against a disposable MySQL container and builds the application
+image for every push and pull request targeting `master`.
 
 ## AI configuration
 
