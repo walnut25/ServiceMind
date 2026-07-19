@@ -2,19 +2,50 @@ services:
   mysql:
     image: mysql:8.4
     environment:
-      MYSQL_DATABASE: smart_service
-      MYSQL_USER: smart_service
-      MYSQL_PASSWORD: smart_service
-      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-smart_service}
+      MYSQL_USER: ${MYSQL_USER:-smart_service}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-smart_service}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
     ports:
-      - "3306:3306"
+      - "${MYSQL_PORT:-3306}:3306"
     volumes:
       - mysql-data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      test:
+        - CMD-SHELL
+        - mysqladmin ping -h localhost -uroot -p"$${MYSQL_ROOT_PASSWORD}" --silent
       interval: 5s
       timeout: 3s
       retries: 20
+
+  app:
+    image: smart-service:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+    init: true
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-smart_service}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_USERNAME: ${MYSQL_USER:-smart_service}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-smart_service}
+      JWT_SECRET: ${JWT_SECRET:-local-development-jwt-secret-change-me}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin123!}
+      AI_CHAT_ENABLED: ${AI_CHAT_ENABLED:-false}
+      AI_BASE_URL: ${AI_BASE_URL:-https://api.deepseek.com}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_MODEL: ${AI_MODEL:-deepseek-chat}
+    ports:
+      - "${SERVER_PORT:-8081}:8081"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://localhost:8081/actuator/health"]
+      interval: 10s
+      timeout: 3s
+      start_period: 30s
+      retries: 6
 
 volumes:
   mysql-data:

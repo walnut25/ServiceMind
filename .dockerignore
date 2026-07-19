@@ -1,0 +1,10 @@
+.git
+.gitattributes
+.idea
+.vscode
+.agents
+.env
+target
+data
+*.iml
+*.log
