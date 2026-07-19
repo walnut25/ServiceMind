@@ -20,15 +20,25 @@ business boundaries remain explicit without adding distributed-system overhead t
 
 ## Run locally
 
-Prerequisites: JDK 21, Maven 3.9+, and Docker.
+The quickest path only requires Docker:
+
+```bash
+docker compose up --build
+```
+
+This builds the application image, starts MySQL, applies Flyway migrations, and waits for both services
+to become healthy. Copy `.env.example` to `.env` to customize ports, credentials, or the AI provider.
+The checked-in defaults are for local development only.
+
+For development with the application running directly on the host, use JDK 21 and Maven 3.9+:
 
 ```bash
 docker compose up -d mysql
 mvn spring-boot:run
 ```
 
-The local development administrator is `admin` / `Admin123!`. Override it with the
-`ADMIN_USERNAME` and `ADMIN_PASSWORD` environment variables outside local development.
+The default local administrator is `admin` / `Admin123!`. Override it with `ADMIN_USERNAME` and
+`ADMIN_PASSWORD`; use a strong `JWT_SECRET` and credentials in every non-local environment.
 
 Log in and copy the `accessToken` from the response:
 
