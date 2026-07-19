@@ -1,5 +1,6 @@
 package dev.smartservice.ticket.application;
 
+import dev.smartservice.identity.application.UserAccountDirectory;
 import dev.smartservice.ticket.domain.Ticket;
 import dev.smartservice.ticket.domain.TicketAuditEvent;
 import dev.smartservice.ticket.domain.TicketAuditEventType;
@@ -18,16 +19,18 @@ public class TicketService {
     private final TicketRepository repository;
     private final TicketCommentRepository commentRepository;
     private final TicketAuditEventRepository auditRepository;
+    private final UserAccountDirectory userAccountDirectory;
 
     public TicketService(TicketRepository repository, TicketCommentRepository commentRepository,
-                         TicketAuditEventRepository auditRepository) {
+                         TicketAuditEventRepository auditRepository, UserAccountDirectory userAccountDirectory) {
         this.repository = repository;
         this.commentRepository = commentRepository;
         this.auditRepository = auditRepository;
+        this.userAccountDirectory = userAccountDirectory;
     }
 
     public Ticket create(String title, String description, TicketPriority priority, String actorUsername) {
-        Ticket ticket = repository.save(new Ticket(title, description, priority));
+        Ticket ticket = repository.save(new Ticket(title, description, priority, actorUsername));
         auditRepository.save(new TicketAuditEvent(ticket.getId(), TicketAuditEventType.TICKET_CREATED,
                 actorUsername, "Ticket created with priority " + priority));
         return ticket;
@@ -39,8 +42,19 @@ public class TicketService {
     }
 
     @Transactional(readOnly = true)
-    public Page<Ticket> list(Pageable pageable) {
-        return repository.findAll(pageable);
+    public Ticket getVisible(long id, String username, boolean canManage) {
+        Ticket ticket = get(id);
+        if (!canManage && !ticket.isRequestedBy(username)) {
+            throw new TicketNotFoundException(id);
+        }
+        return ticket;
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Ticket> list(TicketStatus status, TicketPriority priority, String assignee,
+                             String username, boolean canManage, Pageable pageable) {
+        String requester = canManage ? null : username;
+        return repository.search(status, priority, normalize(assignee), requester, pageable);
     }
 
     public Ticket transition(long id, TicketStatus status, String actorUsername) {
@@ -52,8 +66,21 @@ public class TicketService {
         return ticket;
     }
 
-    public TicketComment addComment(long ticketId, String content, String actorUsername) {
-        get(ticketId);
+    public Ticket assign(long id, String assigneeUsername, String actorUsername) {
+        String assignee = assigneeUsername.strip();
+        if (!userAccountDirectory.canBeAssignedTickets(assignee)) {
+            throw new InvalidTicketAssigneeException(assignee);
+        }
+        Ticket ticket = get(id);
+        String previousAssignee = ticket.getAssigneeUsername();
+        ticket.assignTo(assignee);
+        auditRepository.save(new TicketAuditEvent(id, TicketAuditEventType.ASSIGNEE_CHANGED, actorUsername,
+                "Assignee changed from " + displayAssignee(previousAssignee) + " to " + assignee));
+        return ticket;
+    }
+
+    public TicketComment addComment(long ticketId, String content, String actorUsername, boolean canManage) {
+        getVisible(ticketId, actorUsername, canManage);
         TicketComment comment = commentRepository.save(new TicketComment(ticketId, actorUsername, content));
         auditRepository.save(new TicketAuditEvent(ticketId, TicketAuditEventType.COMMENT_ADDED,
                 actorUsername, "Comment added"));
@@ -61,8 +88,8 @@ public class TicketService {
     }
 
     @Transactional(readOnly = true)
-    public Page<TicketComment> listComments(long ticketId, Pageable pageable) {
-        get(ticketId);
+    public Page<TicketComment> listComments(long ticketId, String username, boolean canManage, Pageable pageable) {
+        getVisible(ticketId, username, canManage);
         return commentRepository.findByTicketId(ticketId, pageable);
     }
 
@@ -70,5 +97,13 @@ public class TicketService {
     public Page<TicketAuditEvent> listAuditEvents(long ticketId, Pageable pageable) {
         get(ticketId);
         return auditRepository.findByTicketId(ticketId, pageable);
+    }
+
+    private String normalize(String value) {
+        return value == null || value.isBlank() ? null : value.strip();
+    }
+
+    private String displayAssignee(String assignee) {
+        return assignee == null ? "unassigned" : assignee;
     }
 }

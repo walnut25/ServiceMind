@@ -34,6 +34,12 @@ public class Ticket {
     @Column(nullable = false, length = 30)
     private TicketStatus status;
 
+    @Column(name = "requester_username", nullable = false, updatable = false, length = 100)
+    private String requesterUsername;
+
+    @Column(name = "assignee_username", length = 100)
+    private String assigneeUsername;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -46,13 +52,23 @@ public class Ticket {
     protected Ticket() {
     }
 
-    public Ticket(String title, String description, TicketPriority priority) {
+    public Ticket(String title, String description, TicketPriority priority, String requesterUsername) {
         this.title = title;
         this.description = description;
         this.priority = priority;
         this.status = TicketStatus.OPEN;
+        this.requesterUsername = requesterUsername;
         this.createdAt = Instant.now();
         this.updatedAt = createdAt;
+    }
+
+    public void assignTo(String assigneeUsername) {
+        this.assigneeUsername = assigneeUsername;
+        this.updatedAt = Instant.now();
+    }
+
+    public boolean isRequestedBy(String username) {
+        return requesterUsername.equalsIgnoreCase(username);
     }
 
     public void transitionTo(TicketStatus target) {
@@ -68,6 +84,8 @@ public class Ticket {
     public String getDescription() { return description; }
     public TicketPriority getPriority() { return priority; }
     public TicketStatus getStatus() { return status; }
+    public String getRequesterUsername() { return requesterUsername; }
+    public String getAssigneeUsername() { return assigneeUsername; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
     public long getVersion() { return version; }

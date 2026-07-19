@@ -6,7 +6,7 @@ business boundaries remain explicit without adding distributed-system overhead t
 ## Current milestone
 
 - Java 21 and Spring Boot 3
-- Ticket creation, lookup, pagination, and controlled status transitions
+- Ticket creation, requester-scoped lookup, assignment, filtering, pagination, and controlled status transitions
 - MySQL schema managed by Flyway
 - Optimistic locking on ticket updates
 - Database-backed users with BCrypt password hashing
