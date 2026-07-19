@@ -1,24 +1,78 @@
 # Smart Service
 
 [![CI](https://github.com/walnut25/ServiceMind/actions/workflows/ci.yml/badge.svg)](https://github.com/walnut25/ServiceMind/actions/workflows/ci.yml)
+[![Java 21](https://img.shields.io/badge/Java-21-ED8B00?logo=openjdk)](https://openjdk.org/projects/jdk/21/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5-6DB33F?logo=springboot)](https://spring.io/projects/spring-boot)
 
-AI-assisted enterprise ticket and knowledge platform. The project starts as a modular monolith so its
-business boundaries remain explicit without adding distributed-system overhead too early.
+An AI-assisted enterprise support platform that connects ticket workflows, operational knowledge, and
+grounded answers in one modular Spring Boot application.
 
-## Current milestone
+Smart Service is intentionally built as a modular monolith: business boundaries stay explicit while
+deployment and local development remain simple. The current release is a complete backend MVP with
+authentication, requester isolation, ticket assignment, audit history, knowledge publishing, and
+provider-neutral RAG answers.
 
-- Java 21 and Spring Boot 3
-- Ticket creation, requester-scoped lookup, assignment, filtering, pagination, and controlled status transitions
-- MySQL schema managed by Flyway
-- Optimistic locking on ticket updates
-- Database-backed users with BCrypt password hashing
-- Stateless JWT authentication and role-based access control
-- Ticket comments with authenticated authors
-- Immutable audit trail for ticket creation, status changes, and comments
-- Knowledge article lifecycle and MySQL full-text search
-- Provider-neutral RAG answers with cited knowledge sources
-- RFC 9457 problem responses for API errors
-- Actuator health and metrics endpoints
+## Engineering highlights
+
+| Area | What is implemented |
+| --- | --- |
+| Secure workflows | Stateless JWT authentication, BCrypt credentials, method-level RBAC, and requester-scoped ticket access |
+| Ticket operations | Priority, assignment, filtering, pagination, controlled state transitions, comments, and immutable audit events |
+| Knowledge lifecycle | Draft, publish, archive, optimistic locking, visibility rules, and MySQL full-text search |
+| Grounded AI | Published-article retrieval, prompt-injection boundaries, configurable OpenAI-compatible provider, and cited sources |
+| Reliability | Flyway migrations, RFC 9457 problem responses, health/metrics endpoints, Docker health checks, and non-root containers |
+| Verification | Unit, domain, MockMvc security, and MySQL 8.4 Testcontainers tests executed by GitHub Actions |
+
+## Architecture
+
+```mermaid
+flowchart LR
+    Client["Client / Swagger / Apifox"] --> API["REST API + JWT security"]
+
+    subgraph App["Smart Service modular monolith"]
+        Identity["Identity"]
+        Ticket["Ticket"]
+        Knowledge["Knowledge"]
+        AI["AI assistant"]
+
+        Ticket --> Identity
+        AI --> Knowledge
+    end
+
+    API --> Identity
+    API --> Ticket
+    API --> Knowledge
+    API --> AI
+
+    Identity --> MySQL[("MySQL 8.4")]
+    Ticket --> MySQL
+    Knowledge --> MySQL
+    AI --> Provider["OpenAI-compatible chat API"]
+```
+
+The modules communicate through application services and repository abstractions rather than sharing
+controller logic. See [the architecture guide](docs/architecture.md) for the ER model, security flow,
+ticket state machine, RAG sequence, and design trade-offs.
+
+## Modules
+
+| Module | Responsibility | Main capabilities |
+| --- | --- | --- |
+| `identity` | Authentication and authorization | Database users, BCrypt, JWT issuance, roles, admin bootstrap |
+| `ticket` | Support request workflow | Ownership, assignment, status transitions, comments, audit trail |
+| `knowledge` | Operational knowledge | Article lifecycle, visibility rules, pagination, full-text search |
+| `ai` | Grounded support answers | Knowledge retrieval, context limits, provider gateway, citations |
+| `common` | Cross-cutting HTTP concerns | Problem Details, OpenAPI metadata, stable page serialization |
+
+## Technology stack
+
+- Java 21 and Spring Boot 3.5
+- Spring Web, Validation, Data JPA, Security, OAuth2 Resource Server, and Actuator
+- MySQL 8.4 with Flyway migrations and full-text indexes
+- Springdoc OpenAPI and Swagger UI
+- JUnit 5, Mockito, MockMvc, AssertJ, and Testcontainers
+- Docker multi-stage builds and Docker Compose
+- GitHub Actions continuous integration
 
 ## Run locally
 
@@ -32,6 +86,12 @@ This builds the application image, starts MySQL, applies Flyway migrations, and 
 to become healthy. Copy `.env.example` to `.env` to customize ports, credentials, or the AI provider.
 The checked-in defaults are for local development only.
 
+If port `3306` is already occupied, set another host port in `.env`:
+
+```text
+MYSQL_PORT=3307
+```
+
 For development with the application running directly on the host, use JDK 21 and Maven 3.9+:
 
 ```bash
@@ -39,10 +99,12 @@ docker compose up -d mysql
 mvn spring-boot:run
 ```
 
-The default local administrator is `admin` / `Admin123!`. Override it with `ADMIN_USERNAME` and
-`ADMIN_PASSWORD`; use a strong `JWT_SECRET` and credentials in every non-local environment.
+The default local administrator is `admin` / `Admin123!`. Use a strong `JWT_SECRET`, administrator
+password, and database credentials in every non-local environment.
 
-Log in and copy the `accessToken` from the response:
+## Five-minute API demo
+
+Log in and copy the returned `accessToken`:
 
 ```bash
 curl -X POST http://localhost:8081/api/v1/auth/login \
@@ -50,7 +112,7 @@ curl -X POST http://localhost:8081/api/v1/auth/login \
   -d '{"username":"admin","password":"Admin123!"}'
 ```
 
-Create a ticket using the returned token:
+Create a ticket:
 
 ```bash
 curl -X POST http://localhost:8081/api/v1/tickets \
@@ -59,55 +121,58 @@ curl -X POST http://localhost:8081/api/v1/tickets \
   -d '{"title":"VPN unavailable","description":"The whole team cannot connect","priority":"P1"}'
 ```
 
-Start work on ticket 1:
+Assign it and begin work:
 
 ```bash
+curl -X PATCH http://localhost:8081/api/v1/tickets/1/assignee \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <access-token>" \
+  -d '{"username":"admin"}'
+
 curl -X PATCH http://localhost:8081/api/v1/tickets/1/status \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <access-token>" \
   -d '{"status":"IN_PROGRESS"}'
 ```
 
-## API documentation
+## API overview
 
-With the application running, OpenAPI JSON is available at:
+| Area | Endpoints | Access |
+| --- | --- | --- |
+| Authentication | `POST /api/v1/auth/login` | Public |
+| Tickets | Create, get, list/filter, assign, transition | Authenticated; assignment/transition require agent or admin |
+| Comments | Add and list ticket comments | Requester owns ticket, or agent/admin |
+| Audit | List ticket audit events | Agent or admin |
+| Knowledge | Create, update, publish, archive, list, search | Reads are authenticated; writes require agent or admin |
+| AI assistant | `POST /api/v1/ai/answers` | Authenticated |
 
-```text
-http://localhost:8081/v3/api-docs
-```
+With the application running:
 
-Interactive Swagger UI is available at:
+- OpenAPI JSON: [http://localhost:8081/v3/api-docs](http://localhost:8081/v3/api-docs)
+- Swagger UI: [http://localhost:8081/swagger-ui.html](http://localhost:8081/swagger-ui.html)
+- Health: [http://localhost:8081/actuator/health](http://localhost:8081/actuator/health)
 
-```text
-http://localhost:8081/swagger-ui.html
-```
+## Tests and CI
 
-In Apifox, create or open a project, choose **Import Data**, select **URL Import**, and enter the
-OpenAPI JSON URL. Use the same URL later to synchronize API changes.
-
-## Tests
-
-Run the complete test suite with:
+Run fast unit, domain, and API security tests:
 
 ```bash
 mvn clean test
 ```
 
-API security and unit tests run without external services. Repository integration tests use
-Testcontainers with MySQL 8.4 and require Docker:
+Run the complete suite against a disposable MySQL 8.4 container:
 
 ```bash
 mvn verify -Pintegration
 ```
 
-Container tests are skipped when the integration profile is used without an available Docker service.
-GitHub Actions runs the complete suite against a disposable MySQL container and builds the application
-image for every push and pull request targeting `master`.
+The suite currently contains 22 unit/API tests and 2 MySQL integration tests. GitHub Actions executes
+the complete suite and builds the application image for every push and pull request targeting `master`.
 
 ## AI configuration
 
-The AI assistant uses an OpenAI-compatible chat API. It defaults to DeepSeek but remains disabled until
-credentials are supplied:
+The AI assistant is disabled until credentials are supplied. It uses an OpenAI-compatible chat API and
+defaults to DeepSeek:
 
 ```bash
 set AI_CHAT_ENABLED=true
@@ -115,10 +180,24 @@ set AI_API_KEY=your-api-key
 mvn spring-boot:run
 ```
 
-Use `AI_BASE_URL` and `AI_MODEL` to switch to another compatible provider. API keys must remain in
-environment variables and must not be committed.
+Use `AI_BASE_URL` and `AI_MODEL` to switch providers. API keys stay in environment variables and are
+never committed. When no published article matches a question, the API returns an explicit ungrounded
+response without calling the model.
 
-## Planned modules
+## Project structure
 
-`identity`, `ticket`, `knowledge`, `ai`, `notification`, and `analytics`. The next milestone adds
-document chunking and vector retrieval, followed by asynchronous ingestion and answer evaluation.
+```text
+src/main/java/dev/smartservice/
+├── identity/    # users, authentication, JWT, roles
+├── ticket/      # workflow, assignment, comments, audit events
+├── knowledge/   # article lifecycle and retrieval
+├── ai/          # RAG orchestration and provider adapter
+└── common/      # HTTP errors, OpenAPI, web configuration
+```
+
+## Roadmap
+
+- Document chunking and vector retrieval
+- Asynchronous knowledge ingestion and answer evaluation
+- Notification and analytics modules
+- Rate limiting, refresh tokens, and production secret management
