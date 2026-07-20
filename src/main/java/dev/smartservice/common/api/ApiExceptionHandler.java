@@ -2,6 +2,9 @@ package dev.smartservice.common.api;
 
 import dev.smartservice.ai.application.AiNotConfiguredException;
 import dev.smartservice.ai.application.AiProviderException;
+import dev.smartservice.identity.application.CannotDisableOwnAccountException;
+import dev.smartservice.identity.application.DuplicateUsernameException;
+import dev.smartservice.identity.application.UserAccountNotFoundException;
 import dev.smartservice.knowledge.application.KnowledgeArticleNotFoundException;
 import dev.smartservice.knowledge.domain.InvalidArticleStateException;
 import dev.smartservice.ticket.application.TicketNotFoundException;
@@ -39,6 +42,21 @@ public class ApiExceptionHandler {
     @ExceptionHandler(TicketNotFoundException.class)
     ProblemDetail handleNotFound(TicketNotFoundException exception, HttpServletRequest request) {
         return problem(HttpStatus.NOT_FOUND, "Ticket not found", exception.getMessage(), request);
+    }
+
+    @ExceptionHandler(UserAccountNotFoundException.class)
+    ProblemDetail handleUserNotFound(UserAccountNotFoundException exception, HttpServletRequest request) {
+        return problem(HttpStatus.NOT_FOUND, "User account not found", exception.getMessage(), request);
+    }
+
+    @ExceptionHandler(DuplicateUsernameException.class)
+    ProblemDetail handleDuplicateUsername(DuplicateUsernameException exception, HttpServletRequest request) {
+        return problem(HttpStatus.CONFLICT, "Username already exists", exception.getMessage(), request);
+    }
+
+    @ExceptionHandler(CannotDisableOwnAccountException.class)
+    ProblemDetail handleCannotDisableSelf(CannotDisableOwnAccountException exception, HttpServletRequest request) {
+        return problem(HttpStatus.CONFLICT, "Cannot disable own account", exception.getMessage(), request);
     }
 
     @ExceptionHandler(KnowledgeArticleNotFoundException.class)

@@ -1,5 +1,8 @@
 package dev.smartservice.integration;
 
+import dev.smartservice.identity.application.UserAccountRepository;
+import dev.smartservice.identity.domain.UserAccount;
+import dev.smartservice.identity.domain.UserRole;
 import dev.smartservice.knowledge.application.KnowledgeArticleRepository;
 import dev.smartservice.knowledge.domain.KnowledgeArticle;
 import dev.smartservice.ticket.application.TicketRepository;
@@ -15,6 +18,8 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -40,6 +45,9 @@ class MySqlRepositoryIT {
 
     @Autowired
     private KnowledgeArticleRepository articleRepository;
+
+    @Autowired
+    private UserAccountRepository userAccountRepository;
 
     @Test
     void persistsOwnershipAndFiltersTickets() {
@@ -70,5 +78,16 @@ class MySqlRepositoryIT {
         assertThat(results).extracting(KnowledgeArticle::getTitle)
                 .contains("VPN gateway recovery")
                 .doesNotContain("VPN draft");
+    }
+
+    @Test
+    void persistsUserAccountRoles() {
+        userAccountRepository.saveAndFlush(
+                new UserAccount("agent-integration", "encoded-password", Set.of(UserRole.AGENT)));
+
+        UserAccount account = userAccountRepository.findByUsernameIgnoreCase("AGENT-INTEGRATION").orElseThrow();
+
+        assertThat(account.isEnabled()).isTrue();
+        assertThat(account.getRoles()).containsExactly(UserRole.AGENT);
     }
 }

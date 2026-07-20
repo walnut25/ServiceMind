@@ -55,8 +55,14 @@ public class UserAccount {
         this.createdAt = Instant.now();
     }
 
+    public void changeEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+
+    public Long getId() { return id; }
     public String getUsername() { return username; }
     public String getPasswordHash() { return passwordHash; }
     public boolean isEnabled() { return enabled; }
     public Set<UserRole> getRoles() { return Collections.unmodifiableSet(roles); }
+    public Instant getCreatedAt() { return createdAt; }
 }
