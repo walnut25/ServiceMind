@@ -1,5 +1,7 @@
 # Smart Service
 
+[English](README.md) | [简体中文](README.zh-CN.md)
+
 [![CI](https://github.com/walnut25/ServiceMind/actions/workflows/ci.yml/badge.svg)](https://github.com/walnut25/ServiceMind/actions/workflows/ci.yml)
 [![Java 21](https://img.shields.io/badge/Java-21-ED8B00?logo=openjdk)](https://openjdk.org/projects/jdk/21/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5-6DB33F?logo=springboot)](https://spring.io/projects/spring-boot)
@@ -16,7 +18,7 @@ provider-neutral RAG answers.
 
 | Area | What is implemented |
 | --- | --- |
-| Secure workflows | Stateless JWT authentication, BCrypt credentials, method-level RBAC, and requester-scoped ticket access |
+| Secure workflows | Stateless JWT authentication, BCrypt credentials, administrator-managed users, RBAC, and requester-scoped ticket access |
 | Ticket operations | Priority, assignment, filtering, pagination, controlled state transitions, comments, and immutable audit events |
 | Knowledge lifecycle | Draft, publish, archive, optimistic locking, visibility rules, and MySQL full-text search |
 | Grounded AI | Published-article retrieval, prompt-injection boundaries, configurable OpenAI-compatible provider, and cited sources |
@@ -58,7 +60,7 @@ ticket state machine, RAG sequence, and design trade-offs.
 
 | Module | Responsibility | Main capabilities |
 | --- | --- | --- |
-| `identity` | Authentication and authorization | Database users, BCrypt, JWT issuance, roles, admin bootstrap |
+| `identity` | Authentication and authorization | User administration, BCrypt, JWT issuance, roles, admin bootstrap |
 | `ticket` | Support request workflow | Ownership, assignment, status transitions, comments, audit trail |
 | `knowledge` | Operational knowledge | Article lifecycle, visibility rules, pagination, full-text search |
 | `ai` | Grounded support answers | Knowledge retrieval, context limits, provider gateway, citations |
@@ -92,11 +94,11 @@ If port `3306` is already occupied, set another host port in `.env`:
 MYSQL_PORT=3307
 ```
 
-For development with the application running directly on the host, use JDK 21 and Maven 3.9+:
+For development with the application running directly on the host, use JDK 21:
 
 ```bash
 docker compose up -d mysql
-mvn spring-boot:run
+./mvnw spring-boot:run
 ```
 
 The default local administrator is `admin` / `Admin123!`. Use a strong `JWT_SECRET`, administrator
@@ -110,6 +112,15 @@ Log in and copy the returned `accessToken`:
 curl -X POST http://localhost:8081/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username":"admin","password":"Admin123!"}'
+```
+
+Create an agent account:
+
+```bash
+curl -X POST http://localhost:8081/api/v1/users \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <access-token>" \
+  -d '{"username":"agent-one","password":"AgentPass123!","roles":["AGENT"]}'
 ```
 
 Create a ticket:
@@ -127,7 +138,7 @@ Assign it and begin work:
 curl -X PATCH http://localhost:8081/api/v1/tickets/1/assignee \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <access-token>" \
-  -d '{"username":"admin"}'
+  -d '{"username":"agent-one"}'
 
 curl -X PATCH http://localhost:8081/api/v1/tickets/1/status \
   -H "Content-Type: application/json" \
@@ -140,6 +151,7 @@ curl -X PATCH http://localhost:8081/api/v1/tickets/1/status \
 | Area | Endpoints | Access |
 | --- | --- | --- |
 | Authentication | `POST /api/v1/auth/login` | Public |
+| Users | Create, get, list, enable, disable | Administrator |
 | Tickets | Create, get, list/filter, assign, transition | Authenticated; assignment/transition require agent or admin |
 | Comments | Add and list ticket comments | Requester owns ticket, or agent/admin |
 | Audit | List ticket audit events | Agent or admin |
@@ -157,17 +169,28 @@ With the application running:
 Run fast unit, domain, and API security tests:
 
 ```bash
-mvn clean test
+./mvnw clean test
 ```
 
 Run the complete suite against a disposable MySQL 8.4 container:
 
 ```bash
-mvn verify -Pintegration
+./mvnw verify -Pintegration
 ```
 
-The suite currently contains 22 unit/API tests and 2 MySQL integration tests. GitHub Actions executes
+The suite currently contains 30 unit/API tests and 3 MySQL integration tests. GitHub Actions executes
 the complete suite and builds the application image for every push and pull request targeting `master`.
+
+Run the repeatable end-to-end user journey (PowerShell):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\smoke-test.ps1 -MysqlPort 3307 -StopAfter
+```
+
+See the [complete testing guide](docs/testing.md) for test layers, expected results, manual Swagger
+checks, optional live-AI verification, and troubleshooting. The
+[interview guide](docs/interview-guide.md) contains resume bullets, a 60-second introduction, a
+five-minute demo flow, and answers to common design questions.
 
 ## AI configuration
 
@@ -177,7 +200,7 @@ defaults to DeepSeek:
 ```bash
 set AI_CHAT_ENABLED=true
 set AI_API_KEY=your-api-key
-mvn spring-boot:run
+./mvnw spring-boot:run
 ```
 
 Use `AI_BASE_URL` and `AI_MODEL` to switch providers. API keys stay in environment variables and are

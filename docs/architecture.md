@@ -226,6 +226,5 @@ adapter checks configuration and translates upstream failures into `503` or `502
 
 - MySQL full-text search keeps the MVP small; vector search is a planned retrieval upgrade.
 - Access tokens are stateless and short-lived; refresh-token rotation is not implemented yet.
-- User administration is currently bootstrap/database driven rather than exposed as a public API.
+- Roles are assigned when an account is created; password reset and later role editing are not implemented yet.
 - Notification and analytics boundaries are planned but intentionally excluded from the MVP.
-
