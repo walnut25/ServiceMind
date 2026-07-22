@@ -224,3 +224,8 @@ src/main/java/dev/smartservice/
 - Asynchronous knowledge ingestion and answer evaluation
 - Notification and analytics modules
 - Rate limiting, refresh tokens, and production secret management
+
+
+## Frontend
+
+See [frontend/README.md](frontend/README.md) for the React SPA documentation.
