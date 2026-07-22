@@ -10,7 +10,7 @@ import { ArticleListPage } from "@/pages/knowledge/ArticleListPage";
 import { ArticleDetailPage } from "@/pages/knowledge/ArticleDetailPage";
 import { ArticleEditPage } from "@/pages/knowledge/ArticleEditPage";
 import { AssistantPage } from "@/pages/assistant/AssistantPage";
-import { PlaceholderPage } from "@/components/common/PlaceholderPage";
+import { UserManagementPage } from "@/pages/admin/UserManagementPage";
 import { AppLayout } from "@/layouts/AppLayout";
 import { AuthGuard } from "./AuthGuard";
 import { RoleGuard } from "./RoleGuard";
@@ -59,7 +59,7 @@ export function AppRouter() {
           path="/admin/users"
           element={
             <RoleGuard roles={["ADMIN"]}>
-              <PlaceholderPage title="\u7528\u6237\u7ba1\u7406" />
+              <UserManagementPage />
             </RoleGuard>
           }
         />
