@@ -6,3 +6,5 @@ target/
 .agents/
 data/
 *.log
+
+.npm-cache/
