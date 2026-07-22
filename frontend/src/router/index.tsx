@@ -6,6 +6,9 @@ import { NotFoundPage } from "@/pages/errors/NotFoundPage";
 import { TicketListPage } from "@/pages/tickets/TicketListPage";
 import { NewTicketPage } from "@/pages/tickets/NewTicketPage";
 import { TicketDetailPage } from "@/pages/tickets/TicketDetailPage";
+import { ArticleListPage } from "@/pages/knowledge/ArticleListPage";
+import { ArticleDetailPage } from "@/pages/knowledge/ArticleDetailPage";
+import { ArticleEditPage } from "@/pages/knowledge/ArticleEditPage";
 import { PlaceholderPage } from "@/components/common/PlaceholderPage";
 import { AppLayout } from "@/layouts/AppLayout";
 import { AuthGuard } from "./AuthGuard";
@@ -30,41 +33,35 @@ export function AppRouter() {
         <Route path="/tickets/new" element={<NewTicketPage />} />
         <Route path="/tickets/:ticketId" element={<TicketDetailPage />} />
 
-        <Route
-          path="/knowledge"
-          element={<PlaceholderPage title="知识库" />}
-        />
+        <Route path="/knowledge" element={<ArticleListPage />} />
         <Route
           path="/knowledge/new"
           element={
             <RoleGuard roles={["ADMIN", "AGENT"]}>
-              <PlaceholderPage title="新建知识文章" />
+              <ArticleEditPage />
             </RoleGuard>
           }
         />
-        <Route
-          path="/knowledge/:articleId"
-          element={<PlaceholderPage title="知识文章详情" />}
-        />
+        <Route path="/knowledge/:articleId" element={<ArticleDetailPage />} />
         <Route
           path="/knowledge/:articleId/edit"
           element={
             <RoleGuard roles={["ADMIN", "AGENT"]}>
-              <PlaceholderPage title="编辑知识文章" />
+              <ArticleEditPage />
             </RoleGuard>
           }
         />
 
         <Route
           path="/assistant"
-          element={<PlaceholderPage title="AI 助手" />}
+          element={<PlaceholderPage title="AI \u52a9\u624b" />}
         />
 
         <Route
           path="/admin/users"
           element={
             <RoleGuard roles={["ADMIN"]}>
-              <PlaceholderPage title="用户管理" />
+              <PlaceholderPage title="\u7528\u6237\u7ba1\u7406" />
             </RoleGuard>
           }
         />

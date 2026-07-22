@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   ticketStatusLabels,
   ticketPriorityLabels,
+  articleStatusLabels,
 } from "@/utils/enums";
 
 describe("enum labels", () => {
@@ -19,5 +20,12 @@ describe("enum labels", () => {
     expect(ticketPriorityLabels.P3).toBe("中");
     expect(ticketPriorityLabels.P4).toBe("低");
     expect(Object.keys(ticketPriorityLabels)).toHaveLength(4);
+  });
+
+  it("maps all article statuses", () => {
+    expect(articleStatusLabels.DRAFT).toBe("草稿");
+    expect(articleStatusLabels.PUBLISHED).toBe("已发布");
+    expect(articleStatusLabels.ARCHIVED).toBe("已归档");
+    expect(Object.keys(articleStatusLabels)).toHaveLength(3);
   });
 });
