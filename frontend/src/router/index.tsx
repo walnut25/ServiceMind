@@ -9,6 +9,7 @@ import { TicketDetailPage } from "@/pages/tickets/TicketDetailPage";
 import { ArticleListPage } from "@/pages/knowledge/ArticleListPage";
 import { ArticleDetailPage } from "@/pages/knowledge/ArticleDetailPage";
 import { ArticleEditPage } from "@/pages/knowledge/ArticleEditPage";
+import { AssistantPage } from "@/pages/assistant/AssistantPage";
 import { PlaceholderPage } from "@/components/common/PlaceholderPage";
 import { AppLayout } from "@/layouts/AppLayout";
 import { AuthGuard } from "./AuthGuard";
@@ -52,10 +53,7 @@ export function AppRouter() {
           }
         />
 
-        <Route
-          path="/assistant"
-          element={<PlaceholderPage title="AI \u52a9\u624b" />}
-        />
+        <Route path="/assistant" element={<AssistantPage />} />
 
         <Route
           path="/admin/users"
