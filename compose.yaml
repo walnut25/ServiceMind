@@ -45,5 +45,16 @@ services:
       start_period: 30s
       retries: 6
 
+  frontend:
+    image: servicemind-frontend:local
+    build:
+      context: frontend
+      dockerfile: Dockerfile
+    depends_on:
+      app:
+        condition: service_healthy
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+
 volumes:
   mysql-data:

@@ -42,16 +42,6 @@ function renderPage() {
   );
 }
 
-function renderWithAuth(roles: string[]) {
-  useAuthStore.setState({
-    accessToken: "token",
-    username: "testuser",
-    roles,
-    isAuthenticated: true,
-    isInitialized: true,
-  });
-}
-
 describe("UserManagementPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -65,7 +55,7 @@ describe("UserManagementPage", () => {
   });
 
   it("renders user list after loading", async () => {
-    vi.mocked(fetchUsers).mockResolvedValue(mockUsersPage as any);
+    vi.mocked(fetchUsers).mockResolvedValue(mockUsersPage as unknown as Awaited<ReturnType<typeof fetchUsers>>);
     renderPage();
 
     await waitFor(() => {
@@ -76,7 +66,7 @@ describe("UserManagementPage", () => {
   });
 
   it("opens create user modal", async () => {
-    vi.mocked(fetchUsers).mockResolvedValue(mockUsersPage as any);
+    vi.mocked(fetchUsers).mockResolvedValue(mockUsersPage as unknown as Awaited<ReturnType<typeof fetchUsers>>);
     renderPage();
 
     await waitFor(() => {
@@ -89,7 +79,7 @@ describe("UserManagementPage", () => {
   });
 
   it("shows validation errors for create user form", async () => {
-    vi.mocked(fetchUsers).mockResolvedValue(mockUsersPage as any);
+    vi.mocked(fetchUsers).mockResolvedValue(mockUsersPage as unknown as Awaited<ReturnType<typeof fetchUsers>>);
     renderPage();
 
     await waitFor(() => {
@@ -111,7 +101,7 @@ describe("UserManagementPage", () => {
   });
 
   it("creates user successfully", async () => {
-    vi.mocked(fetchUsers).mockResolvedValue(mockUsersPage as any);
+    vi.mocked(fetchUsers).mockResolvedValue(mockUsersPage as unknown as Awaited<ReturnType<typeof fetchUsers>>);
     vi.mocked(createUser).mockResolvedValue({
       id: 4, username: "newuser", enabled: true, roles: ["REQUESTER"], createdAt: "2025-01-04T00:00:00Z",
     });
@@ -143,7 +133,7 @@ describe("UserManagementPage", () => {
   });
 
   it("shows disable button for enabled users", async () => {
-    vi.mocked(fetchUsers).mockResolvedValue(mockUsersPage as any);
+    vi.mocked(fetchUsers).mockResolvedValue(mockUsersPage as unknown as Awaited<ReturnType<typeof fetchUsers>>);
     renderPage();
 
     await waitFor(() => {
@@ -163,7 +153,7 @@ describe("UserManagementPage", () => {
       isInitialized: true,
     });
 
-    vi.mocked(fetchUsers).mockResolvedValue(mockUsersPage as any);
+    vi.mocked(fetchUsers).mockResolvedValue(mockUsersPage as unknown as Awaited<ReturnType<typeof fetchUsers>>);
     renderPage();
 
     await waitFor(() => {
@@ -200,7 +190,7 @@ describe("UserManagementPage", () => {
   });
 
   it("toggles user enabled status", async () => {
-    vi.mocked(fetchUsers).mockResolvedValue(mockUsersPage as any);
+    vi.mocked(fetchUsers).mockResolvedValue(mockUsersPage as unknown as Awaited<ReturnType<typeof fetchUsers>>);
     vi.mocked(changeUserEnabled).mockResolvedValue({
       id: 2, username: "agent1", enabled: false, roles: ["AGENT"], createdAt: "2025-01-02T00:00:00Z",
     });

@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ServiceMind - 前端页面展示</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #F5F7FA; color: #1a1a2e; }
+.header { background: linear-gradient(135deg, #2563EB, #1e40af); color: white; padding: 32px 24px; text-align: center; }
+.header h1 { font-size: 28px; margin-bottom: 8px; }
+.header p { opacity: 0.85; font-size: 14px; }
+.dev-server { background: #FEF3C7; border: 1px solid #F59E0B; border-radius: 8px; padding: 12px 20px; margin: 16px 24px; font-size: 13px; text-align: center; }
+.dev-server code { background: #FDE68A; padding: 2px 8px; border-radius: 4px; }
+.container { max-width: 1200px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 20px; }
+.card { background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); overflow: hidden; transition: transform 0.15s, box-shadow 0.15s; }
+.card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
+.card-header { padding: 16px 20px; border-bottom: 1px solid #E5E7EB; display: flex; align-items: center; gap: 10px; }
+.card-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+.badge-get { background: #DBEAFE; color: #1D4ED8; }
+.badge-post { background: #D1FAE5; color: #047857; }
+.badge-patch { background: #FEF3C7; color: #B45309; }
+.badge-all { background: #EDE9FE; color: #6D28D9; }
+.card-title { font-size: 15px; font-weight: 600; }
+.card-body { padding: 16px 20px; }
+.card-body p { font-size: 13px; color: #6B7280; margin-bottom: 8px; line-height: 1.5; }
+.roles { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.role-tag { font-size: 11px; padding: 2px 10px; border-radius: 12px; background: #F3F4F6; color: #4B5563; }
+.role-tag.admin { background: #FEE2E2; color: #DC2626; }
+.role-tag.agent { background: #DBEAFE; color: #2563EB; }
+.role-tag.requester { background: #F3F4F6; color: #6B7280; }
+.card-footer { padding: 12px 20px; background: #F9FAFB; border-top: 1px solid #E5E7EB; display: flex; justify-content: space-between; align-items: center; }
+.card-footer a { color: #2563EB; text-decoration: none; font-size: 13px; font-weight: 500; }
+.card-footer a:hover { text-decoration: underline; }
+.route { font-size: 12px; color: #9CA3AF; font-family: "SF Mono", "Fira Code", monospace; }
+.section-title { font-size: 18px; font-weight: 700; color: #1F2937; padding: 24px 24px 0; max-width: 1200px; margin: 0 auto; }
+.stats { display: flex; gap: 16px; flex-wrap: wrap; padding: 16px 24px; max-width: 1200px; margin: 0 auto; }
+.stat { background: white; border-radius: 8px; padding: 16px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); text-align: center; min-width: 100px; }
+.stat-value { font-size: 24px; font-weight: 700; color: #2563EB; }
+.stat-label { font-size: 12px; color: #6B7280; margin-top: 4px; }
+.footer { text-align: center; padding: 32px; color: #9CA3AF; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>ServiceMind 前端页面展示</h1>
+  <p>智能服务管理平台 — React + TypeScript + Ant Design 5</p>
+</div>
+
+<div class="dev-server">
+  开发服务器已启动：<code>http://localhost:5173</code>  |  点击下方链接直接查看页面
+</div>
+
+<div class="stats">
+  <div class="stat"><div class="stat-value">12</div><div class="stat-label">页面</div></div>
+  <div class="stat"><div class="stat-value">15</div><div class="stat-label">测试文件</div></div>
+  <div class="stat"><div class="stat-value">68</div><div class="stat-label">单元测试</div></div>
+  <div class="stat"><div class="stat-value">10</div><div class="stat-label">E2E 测试</div></div>
+</div>
+
+<div class="section-title">认证</div>
+<div class="container">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-badge badge-all">公开</span>
+      <span class="card-title">登录页</span>
+    </div>
+    <div class="card-body">
+      <p>左右分栏布局，左侧产品介绍，右侧登录表单。React Hook Form + Zod 校验，支持显示/隐藏密码。</p>
+      <div class="roles">
+        <span class="role-tag requester">REQUESTER</span>
+        <span class="role-tag agent">AGENT</span>
+        <span class="role-tag admin">ADMIN</span>
+      </div>
+    </div>
+    <div class="card-footer">
+      <span class="route">/login</span>
+      <a href="http://localhost:5173/login" target="_blank">打开页面 &#8599;</a>
+    </div>
+  </div>
+</div>
+
+<div class="section-title">核心页面</div>
+<div class="container">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-badge badge-get">受保护</span>
+      <span class="card-title">工作台</span>
+    </div>
+    <div class="card-body">
+      <p>角色感知仪表盘。快捷入口卡片 + 最近工单列表。REQUESTER 看到"我的工单"、ADMIN 额外看到"用户管理"。</p>
+      <div class="roles">
+        <span class="role-tag requester">REQUESTER</span>
+        <span class="role-tag agent">AGENT</span>
+        <span class="role-tag admin">ADMIN</span>
+      </div>
+    </div>
+    <div class="card-footer">
+      <span class="route">/dashboard</span>
+      <a href="http://localhost:5173/dashboard" target="_blank">打开页面 &#8599;</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-badge badge-get">受保护</span>
+      <span class="card-title">工单列表</span>
+    </div>
+    <div class="card-body">
+      <p>分页表格 + 状态/优先级筛选 + URL 参数同步。REQUESTER 只看到自己的工单，AGENT/ADMIN 看到所有工单。</p>
+      <div class="roles">
+        <span class="role-tag requester">REQUESTER</span>
+        <span class="role-tag agent">AGENT</span>
+        <span class="role-tag admin">ADMIN</span>
+      </div>
+    </div>
+    <div class="card-footer">
+      <span class="route">/tickets</span>
+      <a href="http://localhost:5173/tickets" target="_blank">打开页面 &#8599;</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-badge badge-post">受保护</span>
+      <span class="card-title">新建工单</span>
+    </div>
+    <div class="card-body">
+      <p>标题 + 描述 + 优先级。字符计数 + 后端校验规则。未保存离开提醒。</p>
+      <div class="roles">
+        <span class="role-tag requester">REQUESTER</span>
+        <span class="role-tag agent">AGENT</span>
+        <span class="role-tag admin">ADMIN</span>
+      </div>
+    </div>
+    <div class="card-footer">
+      <span class="route">/tickets/new</span>
+      <a href="http://localhost:5173/tickets/new" target="_blank">打开页面 &#8599;</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-badge badge-get">受保护</span>
+      <span class="card-title">工单详情</span>
+    </div>
+    <div class="card-body">
+      <p>左右双栏：描述 + 评论 Tab + 审计时间线 | 属性面板 + 状态流转 + 分配负责人。Timeline 展示审计记录。</p>
+      <div class="roles">
+        <span class="role-tag requester">REQUESTER</span>
+        <span class="role-tag agent">AGENT</span>
+        <span class="role-tag admin">ADMIN</span>
+      </div>
+    </div>
+    <div class="card-footer">
+      <span class="route">/tickets/:id</span>
+      <a href="http://localhost:5173/tickets/1" target="_blank">打开页面 &#8599;</a>
+    </div>
+  </div>
+</div>
+
+<div class="section-title">知识库</div>
+<div class="container">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-badge badge-get">受保护</span>
+      <span class="card-title">知识库列表</span>
+    </div>
+    <div class="card-body">
+      <p>搜索框 + 文章卡片 + 分页。搜索同步 URL，无结果时提供跳转 AI 助手入口。AGENT/ADMIN 看到管理操作。</p>
+      <div class="roles">
+        <span class="role-tag requester">REQUESTER</span>
+        <span class="role-tag agent">AGENT</span>
+        <span class="role-tag admin">ADMIN</span>
+      </div>
+    </div>
+    <div class="card-footer">
+      <span class="route">/knowledge</span>
+      <a href="http://localhost:5173/knowledge" target="_blank">打开页面 &#8599;</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-badge badge-get">受保护</span>
+      <span class="card-title">文章详情</span>
+    </div>
+    <div class="card-body">
+      <p>标题 + 元信息 + Markdown 安全渲染（react-markdown + rehype-sanitize）。AGENT/ADMIN 可编辑、发布、归档。</p>
+      <div class="roles">
+        <span class="role-tag requester">REQUESTER</span>
+        <span class="role-tag agent">AGENT</span>
+        <span class="role-tag admin">ADMIN</span>
+      </div>
+    </div>
+    <div class="card-footer">
+      <span class="route">/knowledge/:id</span>
+      <a href="http://localhost:5173/knowledge/1" target="_blank">打开页面 &#8599;</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-badge badge-post">AGENT+</span>
+      <span class="card-title">文章编辑</span>
+    </div>
+    <div class="card-body">
+      <p>桌面端：左侧 Markdown 编辑 + 右侧实时预览。移动端：Tab 切换。保存草稿 / 发布 / 归档。乐观锁 409 保护。</p>
+      <div class="roles">
+        <span class="role-tag agent">AGENT</span>
+        <span class="role-tag admin">ADMIN</span>
+      </div>
+    </div>
+    <div class="card-footer">
+      <span class="route">/knowledge/new</span>
+      <a href="http://localhost:5173/knowledge/new" target="_blank">打开页面 &#8599;</a>
+    </div>
+  </div>
+</div>
+
+<div class="section-title">AI 与 管理</div>
+<div class="container">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-badge badge-post">受保护</span>
+      <span class="card-title">AI 助手</span>
+    </div>
+    <div class="card-body">
+      <p>现代 AI 对话界面。推荐问题 + Markdown 回答 + 来源引用（可跳转文章）。502/503 错误优雅降级。sessionStorage 会话保持。</p>
+      <div class="roles">
+        <span class="role-tag requester">REQUESTER</span>
+        <span class="role-tag agent">AGENT</span>
+        <span class="role-tag admin">ADMIN</span>
+      </div>
+    </div>
+    <div class="card-footer">
+      <span class="route">/assistant</span>
+      <a href="http://localhost:5173/assistant" target="_blank">打开页面 &#8599;</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-badge badge-get">仅 ADMIN</span>
+      <span class="card-title">用户管理</span>
+    </div>
+    <div class="card-body">
+      <p>用户列表表格 + 创建用户 Modal（RHF + Zod + 12 位密码）。启用/禁用二次确认。不能禁用自己。</p>
+      <div class="roles">
+        <span class="role-tag admin">ADMIN</span>
+      </div>
+    </div>
+    <div class="card-footer">
+      <span class="route">/admin/users</span>
+      <a href="http://localhost:5173/admin/users" target="_blank">打开页面 &#8599;</a>
+    </div>
+  </div>
+</div>
+
+<div class="section-title">错误页面</div>
+<div class="container">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-badge badge-all">公开</span>
+      <span class="card-title">403 无权限</span>
+    </div>
+    <div class="card-body">
+      <p>明确说明没有权限，提供"返回工作台"按钮。</p>
+    </div>
+    <div class="card-footer">
+      <span class="route">/403</span>
+      <a href="http://localhost:5173/403" target="_blank">打开页面 &#8599;</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-badge badge-all">公开</span>
+      <span class="card-title">404 未找到</span>
+    </div>
+    <div class="card-body">
+      <p>明确说明页面不存在，提供"返回工作台"按钮。</p>
+    </div>
+    <div class="card-footer">
+      <span class="route">* (任意不存在的路径)</span>
+      <a href="http://localhost:5173/nonexistent" target="_blank">打开页面 &#8599;</a>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  <p>ServiceMind Frontend v0.1.0 · React 19 · TypeScript 5.7 · Ant Design 5 · Vite 6</p>
+  <p style="margin-top:4px">所有链接需要后端 API 才能完全正常渲染数据。无后端时页面框架和 UI 仍然可见。</p>
+</div>
+</body>
+</html>
