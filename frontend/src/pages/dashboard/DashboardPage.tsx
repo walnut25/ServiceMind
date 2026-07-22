@@ -55,8 +55,9 @@ export function DashboardPage() {
   const roles = useAuthStore((s) => s.roles);
   const username = useAuthStore((s) => s.username);
 
+  const roleSet = new Set<string>(roles);
   const visibleActions = quickActions.filter((action) =>
-    action.roles.some((role) => roles.includes(role))
+    action.roles.some((role) => roleSet.has(role))
   );
 
   return (
