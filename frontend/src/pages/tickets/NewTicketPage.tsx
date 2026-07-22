@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -41,7 +41,11 @@ const priorityOptions: { value: TicketPriority; label: string }[] = (
 
 export function NewTicketPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const createMutation = useCreateTicket();
+
+  const locationState = location.state as { description?: string } | null;
+  const prefilledDescription = locationState?.description ?? "";
 
   const {
     control,
@@ -49,16 +53,23 @@ export function NewTicketPage() {
     formState: { errors, isSubmitting, isDirty },
     setError,
     watch,
+    setValue,
   } = useForm<TicketFormValues>({
     resolver: zodResolver(ticketSchema),
     defaultValues: {
       title: "",
-      description: "",
+      description: prefilledDescription,
       priority: "P3",
     },
   });
 
   const titleValue = watch("title");
+
+  useEffect(() => {
+    if (prefilledDescription) {
+      setValue("description", prefilledDescription);
+    }
+  }, [prefilledDescription, setValue]);
 
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
@@ -74,7 +85,7 @@ export function NewTicketPage() {
     try {
       const ticket = await createMutation.mutateAsync(values);
       message.success("工单创建成功");
-      navigate(`/tickets/${ticket.id}`, { replace: true });
+      navigate("/tickets/" + ticket.id, { replace: true });
     } catch (err) {
       const apiError = err as ApiError;
       const detail =
@@ -108,7 +119,7 @@ export function NewTicketPage() {
             label="标题"
             validateStatus={errors.title ? "error" : ""}
             help={errors.title?.message}
-            extra={`${titleValue.length}/200`}
+            extra={titleValue.length + "/200"}
           >
             <Controller
               name="title"

@@ -39,12 +39,12 @@ function renderPage() {
 describe("NewTicketPage", () => {
   it("shows validation errors for empty form", async () => {
     renderPage();
-    const button = screen.getByRole("button", { name: /提交/ });
+    const button = screen.getByRole("button", { name: "\u63d0\u4ea4\u5de5\u5355" });
     await userEvent.click(button);
 
     await waitFor(() => {
-      expect(screen.getByText("请输入工单标题")).toBeDefined();
-      expect(screen.getByText("请输入工单描述")).toBeDefined();
+      expect(screen.getByText("\u8bf7\u8f93\u5165\u5de5\u5355\u6807\u9898")).toBeDefined();
+      expect(screen.getByText("\u8bf7\u8f93\u5165\u5de5\u5355\u63cf\u8ff0")).toBeDefined();
     });
   });
 
@@ -55,8 +55,6 @@ describe("NewTicketPage", () => {
 
   it("has priority default set to P3", () => {
     renderPage();
-    expect(screen.getByText("中")).toBeDefined();
+    expect(screen.getByText("\u4e2d")).toBeDefined();
   });
-
-
 });
