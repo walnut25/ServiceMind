@@ -26,3 +26,16 @@ export const auditEventTypeLabels: Record<TicketAuditEventType, string> = {
   COMMENT_ADDED: "添加评论",
   ASSIGNEE_CHANGED: "变更负责人",
 };
+
+
+import type { UserRole } from "@/types/domain";
+
+export const roleLabels: Record<UserRole, string> = {
+  ADMIN: "管理员",
+  AGENT: "客服",
+  REQUESTER: "普通用户",
+};
+
+export function roleLabel(role: UserRole): string {
+  return roleLabels[role];
+}
