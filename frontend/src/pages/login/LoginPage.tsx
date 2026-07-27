@@ -101,7 +101,6 @@ export function LoginPage() {
         background: "linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)",
       }}
     >
-      {/* Left panel */}
       <div
         style={{
           flex: 1,
@@ -290,7 +289,6 @@ export function LoginPage() {
         </div>
       </div>
 
-      {/* Right panel */}
       <div
         style={{
           width: 480,

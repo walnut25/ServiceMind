@@ -3,8 +3,6 @@ import type { TicketResponse, CreateTicketRequest, TicketListParams } from "@/ty
 import type { PageResponse } from "@/types/api";
 import type { TicketStatus } from "@/types/domain";
 
-// --- Tickets ---
-
 export async function fetchTickets(
   params: TicketListParams
 ): Promise<PageResponse<TicketResponse>> {
@@ -30,8 +28,6 @@ export async function createTicket(
   const r = await apiClient.post<TicketResponse>("/tickets", data);
   return r.data;
 }
-
-// --- Comments ---
 
 export interface CommentResponse {
   id: number;
@@ -63,8 +59,6 @@ export async function addComment(
   return r.data;
 }
 
-// --- Audit ---
-
 export interface AuditEventResponse {
   id: number;
   ticketId: number;
@@ -85,8 +79,6 @@ export async function fetchAuditEvents(
   return r.data;
 }
 
-// --- Status ---
-
 export async function transitionTicket(
   ticketId: number,
   status: TicketStatus
@@ -98,8 +90,6 @@ export async function transitionTicket(
   return r.data;
 }
 
-// --- Assignee ---
-
 export async function assignTicket(
   ticketId: number,
   username: string
@@ -110,8 +100,6 @@ export async function assignTicket(
   );
   return r.data;
 }
-
-// --- Assignment candidates ---
 
 export interface AssignableUserResponse {
   id: number;
