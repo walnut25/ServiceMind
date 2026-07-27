@@ -28,7 +28,7 @@ import {
   useAuditEvents,
   useTransitionTicket,
   useAssignTicket,
-  useUsers,
+  useAssignableUsers,
 } from "@/hooks/useTickets";
 import { useAuthStore } from "@/stores/auth";
 import { ticketStatusLabels, ticketPriorityLabels } from "@/utils/enums";
@@ -53,15 +53,14 @@ export function TicketDetailPage() {
   const id = Number(ticketId);
   const roles = useAuthStore((s) => s.roles);
   const canManage = roles.includes("ADMIN") || roles.includes("AGENT");
-  const isAdmin = roles.includes("ADMIN");
 
-  const { data: ticket, isLoading, isError, refetch } = useTicket(id);
+  const { data: ticket, isLoading, isError, error, refetch } = useTicket(id);
   const { data: commentsData, isLoading: commentsLoading } = useComments(id);
-  const { data: auditData, isLoading: auditLoading } = useAuditEvents(id);
+  const { data: auditData, isLoading: auditLoading } = useAuditEvents(id, canManage);
   const addCommentMutation = useAddComment(id);
   const transitionMutation = useTransitionTicket(id);
   const assignMutation = useAssignTicket(id);
-  const { data: usersData } = useUsers();
+  const { data: usersData, isLoading: assigneesLoading } = useAssignableUsers(canManage);
 
   const [commentText, setCommentText] = useState("");
   const [assignModalOpen, setAssignModalOpen] = useState(false);
@@ -127,8 +126,7 @@ export function TicketDetailPage() {
   }
 
   if (isError) {
-    const axiosErr = (isError as unknown as { response?: { status: number } });
-    if (axiosErr?.response?.status === 404) {
+    if ((error as ApiError | null)?.response?.status === 404) {
       return (
         <Result
           status="404"
@@ -146,9 +144,7 @@ export function TicketDetailPage() {
   if (!ticket) return null;
 
   const allowedTransitions = getAllowedTransitions(ticket.status);
-  const availableAssignees = usersData?.content.filter(
-    (u) => u.enabled && (u.roles.includes("AGENT") || u.roles.includes("ADMIN"))
-  ) ?? [];
+  const availableAssignees = usersData?.content ?? [];
 
   // --- Comment tab ---
   const commentPanel = (
@@ -332,22 +328,13 @@ export function TicketDetailPage() {
                 <Divider style={{ margin: "4px 0" }} />
 
                 {/* Assign button */}
-                {isAdmin ? (
-                  <Button
-                    icon={<UserSwitchOutlined />}
-                    block
-                    onClick={() => setAssignModalOpen(true)}
-                  >
-                    分配负责人
-                  </Button>
-                ) : (
-                  <Button icon={<UserSwitchOutlined />} block disabled>
-                    分配负责人
-                    <Text type="secondary" style={{ fontSize: 11, display: "block" }}>
-                      (用户列表仅 ADMIN 可用)
-                    </Text>
-                  </Button>
-                )}
+                <Button
+                  icon={<UserSwitchOutlined />}
+                  block
+                  onClick={() => setAssignModalOpen(true)}
+                >
+                  分配负责人
+                </Button>
               </Space>
             </Card>
           )}
@@ -361,21 +348,18 @@ export function TicketDetailPage() {
         onCancel={() => setAssignModalOpen(false)}
         footer={null}
       >
-        {availableAssignees.length === 0 ? (
-          <Text type="secondary">暂无可分配的用户</Text>
-        ) : (
-          <Select
-            style={{ width: "100%" }}
-            placeholder="选择负责人"
-            value={ticket.assigneeUsername ?? undefined}
-            onChange={(val) => handleAssign(val)}
-            loading={assignMutation.isPending}
-            options={availableAssignees.map((u) => ({
-              value: u.username,
-              label: `${u.username} (${u.roles.join(", ")})`,
-            }))}
-          />
-        )}
+        <Select
+          style={{ width: "100%" }}
+          placeholder="选择负责人"
+          value={ticket.assigneeUsername ?? undefined}
+          onChange={(val) => handleAssign(val)}
+          loading={assigneesLoading || assignMutation.isPending}
+          notFoundContent={assigneesLoading ? "正在加载..." : "暂无可分配的用户"}
+          options={availableAssignees.map((u) => ({
+            value: u.username,
+            label: `${u.username} (${u.roles.join(", ")})`,
+          }))}
+        />
       </Modal>
     </div>
   );

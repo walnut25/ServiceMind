@@ -34,8 +34,7 @@ import java.util.Set;
 @Validated
 @RestController
 @RequestMapping("/api/v1/users")
-@PreAuthorize("hasRole('ADMIN')")
-@Tag(name = "Users", description = "Administrator-only user account management")
+@Tag(name = "Users", description = "User administration and assignment candidates")
 public class UserAccountController {
 
     private final UserAccountService service;
@@ -46,24 +45,35 @@ public class UserAccountController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Create a user account")
     public UserResponse create(@Valid @RequestBody CreateUserRequest request) {
         return UserResponse.from(service.create(request.username(), request.password(), request.roles()));
     }
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "List user accounts")
     public Page<UserResponse> list(@PageableDefault(size = 20) Pageable pageable) {
         return service.list(pageable).map(UserResponse::from);
     }
 
+    @GetMapping("/assignees")
+    @PreAuthorize("hasAnyRole('ADMIN', 'AGENT')")
+    @Operation(summary = "List enabled users who can be assigned tickets")
+    public Page<AssignableUserResponse> listAssignable(@PageableDefault(size = 100) Pageable pageable) {
+        return service.listAssignable(pageable).map(AssignableUserResponse::from);
+    }
+
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get a user account")
     public UserResponse get(@PathVariable long id) {
         return UserResponse.from(service.get(id));
     }
 
     @PatchMapping("/{id}/enabled")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Enable or disable a user account")
     public UserResponse changeEnabled(@PathVariable long id, @Valid @RequestBody ChangeEnabledRequest request,
                                       Authentication authentication) {
@@ -87,6 +97,12 @@ public class UserAccountController {
         static UserResponse from(UserAccount account) {
             return new UserResponse(account.getId(), account.getUsername(), account.isEnabled(),
                     account.getRoles(), account.getCreatedAt());
+        }
+    }
+
+    public record AssignableUserResponse(long id, String username, Set<UserRole> roles) {
+        static AssignableUserResponse from(UserAccount account) {
+            return new AssignableUserResponse(account.getId(), account.getUsername(), account.getRoles());
         }
     }
 }

@@ -8,7 +8,7 @@ import {
   fetchAuditEvents,
   transitionTicket,
   assignTicket,
-  fetchUsers,
+  fetchAssignableUsers,
 } from "@/api/tickets";
 import type { TicketListParams, CreateTicketRequest } from "@/types/ticket";
 import type { TicketStatus } from "@/types/domain";
@@ -21,7 +21,7 @@ export const ticketKeys = {
   detail: (id: number) => [...ticketKeys.details(), id] as const,
   comments: (id: number) => [...ticketKeys.detail(id), "comments"] as const,
   audit: (id: number) => [...ticketKeys.detail(id), "audit"] as const,
-  users: ["users"] as const,
+  assignees: ["users", "assignees"] as const,
 };
 
 export function useTicketList(params: TicketListParams) {
@@ -67,11 +67,11 @@ export function useAddComment(ticketId: number) {
   });
 }
 
-export function useAuditEvents(ticketId: number) {
+export function useAuditEvents(ticketId: number, enabled = true) {
   return useQuery({
     queryKey: ticketKeys.audit(ticketId),
     queryFn: () => fetchAuditEvents(ticketId, 0, 100),
-    enabled: ticketId > 0,
+    enabled: ticketId > 0 && enabled,
   });
 }
 
@@ -99,10 +99,11 @@ export function useAssignTicket(ticketId: number) {
   });
 }
 
-export function useUsers() {
+export function useAssignableUsers(enabled = true) {
   return useQuery({
-    queryKey: ticketKeys.users,
-    queryFn: () => fetchUsers(0, 100),
+    queryKey: ticketKeys.assignees,
+    queryFn: () => fetchAssignableUsers(0, 100),
+    enabled,
     staleTime: 60_000,
   });
 }

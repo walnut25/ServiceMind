@@ -45,6 +45,11 @@ public class UserAccountService {
         return repository.findAll(pageable);
     }
 
+    @Transactional(readOnly = true)
+    public Page<UserAccount> listAssignable(Pageable pageable) {
+        return repository.findAssignableUsers(Set.of(UserRole.ADMIN, UserRole.AGENT), pageable);
+    }
+
     public UserAccount changeEnabled(long id, boolean enabled, String actorUsername) {
         UserAccount account = get(id);
         if (!enabled && account.getUsername().equalsIgnoreCase(actorUsername)) {

@@ -111,22 +111,20 @@ export async function assignTicket(
   return r.data;
 }
 
-// --- Users (for assignee picker, ADMIN only) ---
+// --- Assignment candidates ---
 
-export interface UserResponse {
+export interface AssignableUserResponse {
   id: number;
   username: string;
-  enabled: boolean;
   roles: string[];
-  createdAt: string;
 }
 
-export async function fetchUsers(
+export async function fetchAssignableUsers(
   page: number,
   size: number
-): Promise<PageResponse<UserResponse>> {
-  const r = await apiClient.get<PageResponse<UserResponse>>(
-    `/users?page=${page}&size=${size}`
+): Promise<PageResponse<AssignableUserResponse>> {
+  const r = await apiClient.get<PageResponse<AssignableUserResponse>>(
+    `/users/assignees?page=${page}&size=${size}`
   );
   return r.data;
 }

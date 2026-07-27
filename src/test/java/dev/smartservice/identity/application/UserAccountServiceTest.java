@@ -5,6 +5,8 @@ import dev.smartservice.identity.domain.UserRole;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -87,6 +89,16 @@ class UserAccountServiceTest {
 
         assertThat(updated.isEnabled()).isFalse();
         verify(repository).findById(2L);
+    }
+
+    @Test
+    void listsOnlyEnabledAssignableRoles() {
+        UserAccount agent = account(2L, "agent-one", UserRole.AGENT);
+        PageRequest pageable = PageRequest.of(0, 20);
+        when(repository.findAssignableUsers(Set.of(UserRole.ADMIN, UserRole.AGENT), pageable))
+                .thenReturn(new PageImpl<>(java.util.List.of(agent), pageable, 1));
+
+        assertThat(service.listAssignable(pageable).getContent()).containsExactly(agent);
     }
 
     private UserAccount account(long id, String username, UserRole role) {
