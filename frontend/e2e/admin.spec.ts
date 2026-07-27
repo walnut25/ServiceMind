@@ -1,13 +1,13 @@
 import { test, expect } from "@playwright/test";
 
 const ADMIN_USER = process.env.E2E_ADMIN_USERNAME || "admin";
-const ADMIN_PASS = process.env.E2E_ADMIN_PASSWORD || "change-me";
+const ADMIN_PASS = process.env.E2E_ADMIN_PASSWORD || "Admin123!";
 
 test.describe("ADMIN flow", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/login");
-    await page.fill('input[id="username"]', ADMIN_USER);
-    await page.fill('input[id="password"]', ADMIN_PASS);
+    await page.getByPlaceholder("用户名").fill(ADMIN_USER);
+    await page.getByPlaceholder("密码").fill(ADMIN_PASS);
     await page.click('button[type="submit"]');
     await page.waitForURL(/dashboard/);
   });

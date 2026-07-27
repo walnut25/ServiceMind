@@ -237,7 +237,7 @@ export function UserManagementPage() {
         onOk={handleSubmit(handleCreate)}
         confirmLoading={isSubmitting}
         maskClosable={false}
-        destroyOnClose
+        destroyOnHidden
       >
         <Space direction="vertical" style={{ width: "100%" }} size="middle">
           <div>

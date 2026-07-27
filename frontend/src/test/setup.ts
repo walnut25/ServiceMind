@@ -1,5 +1,7 @@
 ﻿import "@testing-library/jest-dom/vitest";
 
+import "@ant-design/v5-patch-for-react-19";
+
 Object.defineProperty(window, "matchMedia", {
   writable: true,
   value: (query: string) => ({
@@ -12,6 +14,12 @@ Object.defineProperty(window, "matchMedia", {
     removeEventListener: () => {},
     dispatchEvent: () => false,
   }),
+});
+
+const getComputedStyle = window.getComputedStyle.bind(window);
+Object.defineProperty(window, "getComputedStyle", {
+  value: (element: Element) => getComputedStyle(element),
+  configurable: true,
 });
 
 const locationMock = {
