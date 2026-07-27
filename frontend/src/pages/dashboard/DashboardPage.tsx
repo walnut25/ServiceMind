@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Typography, Card, Row, Col, List, Tag, Button, Skeleton } from "antd";
+import { Typography, Card, Row, Col, List, Tag, Button, Skeleton, Statistic } from "antd";
 import {
   FileTextOutlined,
   PlusCircleOutlined,
@@ -9,7 +9,7 @@ import {
   RightOutlined,
 } from "@ant-design/icons";
 import { useAuthStore } from "@/stores/auth";
-import { useTicketList } from "@/hooks/useTickets";
+import { useTicketList, useTicketMetrics } from "@/hooks/useTickets";
 import { ticketPriorityLabels, ticketStatusLabels } from "@/utils/enums";
 import type { UserRole, TicketStatus, TicketPriority } from "@/types/domain";
 import type { TicketResponse } from "@/types/ticket";
@@ -69,6 +69,7 @@ export function DashboardPage() {
 
   const roleSet = new Set(roles);
   const isRequester = roleSet.has("REQUESTER") && !roleSet.has("ADMIN") && !roleSet.has("AGENT");
+  const canManage = roleSet.has("ADMIN") || roleSet.has("AGENT");
 
   const visibleActions = quickActions.filter((action) =>
     action.roles.some((role) => roleSet.has(role))
@@ -80,6 +81,7 @@ export function DashboardPage() {
     size: 5,
     sort: "updatedAt,desc",
   });
+  const metrics = useTicketMetrics(canManage);
 
   return (
     <div>
@@ -89,6 +91,50 @@ export function DashboardPage() {
       <Paragraph type="secondary" style={{ marginBottom: 24 }}>
         欢迎回来，{username}
       </Paragraph>
+
+      {canManage && (
+        <div style={{ marginBottom: 28 }}>
+          <Title level={5} style={{ marginBottom: 12 }}>
+            工单运营概览
+          </Title>
+          {metrics.isLoading ? (
+            <Skeleton active paragraph={{ rows: 2 }} />
+          ) : metrics.data ? (
+            <Row gutter={[16, 16]}>
+              <Col xs={12} lg={6}>
+                <Card size="small">
+                  <Statistic title="处理中积压" value={metrics.data.active} />
+                </Card>
+              </Col>
+              <Col xs={12} lg={6}>
+                <Card size="small">
+                  <Statistic title="待分配" value={metrics.data.unassignedActive} />
+                </Card>
+              </Col>
+              <Col xs={12} lg={6}>
+                <Card size="small">
+                  <Statistic
+                    title="SLA 已超时"
+                    value={metrics.data.breached}
+                    valueStyle={{ color: metrics.data.breached > 0 ? "#cf1322" : undefined }}
+                  />
+                </Card>
+              </Col>
+              <Col xs={12} lg={6}>
+                <Card size="small">
+                  <Statistic
+                    title="4 小时内到期"
+                    value={metrics.data.dueSoon}
+                    valueStyle={{ color: metrics.data.dueSoon > 0 ? "#d46b08" : undefined }}
+                  />
+                </Card>
+              </Col>
+            </Row>
+          ) : (
+            <Text type="secondary">运营指标暂时不可用</Text>
+          )}
+        </div>
+      )}
 
       <Title level={5} style={{ marginBottom: 12 }}>
         快捷入口

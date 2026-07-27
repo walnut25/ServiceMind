@@ -19,7 +19,7 @@ provider-neutral RAG answers.
 | Area | What is implemented |
 | --- | --- |
 | Secure workflows | Stateless JWT authentication, BCrypt credentials, administrator-managed users, RBAC, and requester-scoped ticket access |
-| Ticket operations | Priority, assignment, filtering, pagination, controlled state transitions, comments, and immutable audit events |
+| Ticket operations | Priority-based SLA deadlines, breach filtering, backlog metrics, assignment, controlled transitions, comments, and immutable audit events |
 | Knowledge lifecycle | Draft, publish, archive, optimistic locking, visibility rules, and MySQL full-text search |
 | Grounded AI | Published-article retrieval, prompt-injection boundaries, configurable OpenAI-compatible provider, and cited sources |
 | Reliability | Flyway migrations, RFC 9457 problem responses, health/metrics endpoints, Docker health checks, and non-root containers |
@@ -61,7 +61,7 @@ ticket state machine, RAG sequence, and design trade-offs.
 | Module | Responsibility | Main capabilities |
 | --- | --- | --- |
 | `identity` | Authentication and authorization | User administration, BCrypt, JWT issuance, roles, admin bootstrap |
-| `ticket` | Support request workflow | Ownership, assignment, status transitions, comments, audit trail |
+| `ticket` | Support request workflow | Ownership, SLA tracking, operational metrics, assignment, transitions, comments, audit trail |
 | `knowledge` | Operational knowledge | Article lifecycle, visibility rules, pagination, full-text search |
 | `ai` | Grounded support answers | Knowledge retrieval, context limits, provider gateway, citations |
 | `common` | Cross-cutting HTTP concerns | Problem Details, OpenAPI metadata, stable page serialization |
@@ -72,6 +72,7 @@ ticket state machine, RAG sequence, and design trade-offs.
 - Spring Web, Validation, Data JPA, Security, OAuth2 Resource Server, and Actuator
 - MySQL 8.4 with Flyway migrations and full-text indexes
 - Springdoc OpenAPI and Swagger UI
+- React, TypeScript, TanStack Query, and Ant Design
 - JUnit 5, Mockito, MockMvc, AssertJ, and Testcontainers
 - Docker multi-stage builds and Docker Compose
 - GitHub Actions continuous integration
@@ -144,6 +145,9 @@ curl -X PATCH http://localhost:8081/api/v1/tickets/1/status \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <access-token>" \
   -d '{"status":"IN_PROGRESS"}'
+
+curl http://localhost:8081/api/v1/tickets/metrics \
+  -H "Authorization: Bearer <access-token>"
 ```
 
 ## API overview
@@ -152,7 +156,8 @@ curl -X PATCH http://localhost:8081/api/v1/tickets/1/status \
 | --- | --- | --- |
 | Authentication | `POST /api/v1/auth/login` | Public |
 | Users | Create, get, list, enable, disable; list assignment candidates | Administration requires admin; candidates allow agent/admin |
-| Tickets | Create, get, list/filter, assign, transition | Authenticated; assignment/transition require agent or admin |
+| Tickets | Create, get, list/filter (including SLA breaches), assign, transition | Authenticated; assignment/transition require agent or admin |
+| Operations metrics | Backlog, unassigned, breached, and due-soon counts | Agent or admin |
 | Comments | Add and list ticket comments | Requester owns ticket, or agent/admin |
 | Audit | List ticket audit events | Agent or admin |
 | Knowledge | Create, update, publish, archive, list, search | Reads are authenticated; writes require agent or admin |
@@ -178,7 +183,7 @@ Run the complete suite against a disposable MySQL 8.4 container:
 ./mvnw verify -Pintegration
 ```
 
-The suite currently contains 33 unit/API tests and 3 MySQL integration tests. GitHub Actions executes
+The suite currently contains 42 unit/API tests and 4 MySQL integration tests. GitHub Actions executes
 the complete suite and builds the application image for every push and pull request targeting `main`.
 
 Run the repeatable end-to-end user journey (PowerShell):

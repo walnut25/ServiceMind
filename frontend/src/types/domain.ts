@@ -4,6 +4,8 @@ export type TicketStatus = "OPEN" | "IN_PROGRESS" | "RESOLVED" | "CLOSED";
 
 export type TicketPriority = "P1" | "P2" | "P3" | "P4";
 
+export type TicketSlaStatus = "ON_TRACK" | "BREACHED" | "MET";
+
 export type ArticleStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
 
 export type TicketAuditEventType =

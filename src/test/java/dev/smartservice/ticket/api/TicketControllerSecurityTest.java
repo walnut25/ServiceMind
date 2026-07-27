@@ -3,9 +3,11 @@ package dev.smartservice.ticket.api;
 import dev.smartservice.common.config.WebConfiguration;
 import dev.smartservice.identity.application.DatabaseUserDetailsService;
 import dev.smartservice.identity.config.SecurityConfiguration;
+import dev.smartservice.ticket.application.TicketMetrics;
 import dev.smartservice.ticket.application.TicketService;
 import dev.smartservice.ticket.domain.Ticket;
 import dev.smartservice.ticket.domain.TicketPriority;
+import dev.smartservice.ticket.domain.TicketStatus;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -15,6 +17,9 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
+
+import java.time.Instant;
+import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -49,15 +54,15 @@ class TicketControllerSecurityTest {
 
     @Test
     void scopesRequesterTicketListToAuthenticatedUsername() throws Exception {
-        when(service.list(any(), any(), any(), anyString(), anyBoolean(), any())).thenReturn(Page.empty());
+        when(service.list(any(), any(), any(), any(), anyString(), anyBoolean(), any())).thenReturn(Page.empty());
 
-        mockMvc.perform(get("/api/v1/tickets?status=OPEN&priority=P1")
+        mockMvc.perform(get("/api/v1/tickets?status=OPEN&priority=P1&slaBreached=true")
                         .with(jwt().jwt(token -> token.subject("requester-one"))
                                 .authorities(new SimpleGrantedAuthority("ROLE_REQUESTER"))))
                 .andExpect(status().isOk());
 
-        verify(service).list(eq(dev.smartservice.ticket.domain.TicketStatus.OPEN), eq(TicketPriority.P1),
-                eq(null), eq("requester-one"), eq(false), any());
+        verify(service).list(eq(TicketStatus.OPEN), eq(TicketPriority.P1),
+                eq(null), eq(true), eq("requester-one"), eq(false), any());
     }
 
     @Test
@@ -88,6 +93,32 @@ class TicketControllerSecurityTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.requesterUsername").value("requester-one"))
                 .andExpect(jsonPath("$.assigneeUsername").value("agent-two"));
+    }
+
+    @Test
+    void allowsSupportStaffToViewMetrics() throws Exception {
+        when(service.metrics()).thenReturn(new TicketMetrics(
+                Instant.parse("2026-07-28T08:00:00Z"),
+                12, 7, 3, 2, 1,
+                Map.of(TicketStatus.OPEN, 5L),
+                Map.of(TicketPriority.P1, 4L)));
+
+        mockMvc.perform(get("/api/v1/tickets/metrics")
+                        .with(jwt().jwt(token -> token.subject("agent-one"))
+                                .authorities(new SimpleGrantedAuthority("ROLE_AGENT"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(12))
+                .andExpect(jsonPath("$.active").value(7))
+                .andExpect(jsonPath("$.breached").value(2))
+                .andExpect(jsonPath("$.byStatus.OPEN").value(5));
+    }
+
+    @Test
+    void forbidsRequesterFromViewingTeamMetrics() throws Exception {
+        mockMvc.perform(get("/api/v1/tickets/metrics")
+                        .with(jwt().jwt(token -> token.subject("requester-one"))
+                                .authorities(new SimpleGrantedAuthority("ROLE_REQUESTER"))))
+                .andExpect(status().isForbidden());
     }
 
     private Ticket ticket(long id, String requester) {

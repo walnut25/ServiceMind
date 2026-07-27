@@ -18,9 +18,13 @@ import { PlusOutlined, ReloadOutlined, SearchOutlined } from "@ant-design/icons"
 import type { ColumnsType } from "antd/es/table";
 import { useAuthStore } from "@/stores/auth";
 import { useTicketList } from "@/hooks/useTickets";
-import { ticketStatusLabels, ticketPriorityLabels } from "@/utils/enums";
+import {
+  ticketStatusLabels,
+  ticketPriorityLabels,
+  ticketSlaStatusLabels,
+} from "@/utils/enums";
 import type { TicketResponse } from "@/types/ticket";
-import type { TicketStatus, TicketPriority } from "@/types/domain";
+import type { TicketStatus, TicketPriority, TicketSlaStatus } from "@/types/domain";
 
 const { Title, Text } = Typography;
 
@@ -52,6 +56,12 @@ const statusColors: Record<TicketStatus, string> = {
   CLOSED: "default",
 };
 
+const slaColors: Record<TicketSlaStatus, string> = {
+  ON_TRACK: "processing",
+  BREACHED: "error",
+  MET: "success",
+};
+
 export function TicketListPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -66,9 +76,11 @@ export function TicketListPage() {
       | TicketPriority
       | undefined;
     const assignee = searchParams.get("assignee") || undefined;
+    const slaFilter = searchParams.get("slaBreached");
+    const slaBreached = slaFilter === null ? undefined : slaFilter === "true";
     const page = Number(searchParams.get("page") || "0");
     const size = Number(searchParams.get("size") || "20");
-    return { status, priority, assignee, page, size, sort: "createdAt,desc" };
+    return { status, priority, assignee, slaBreached, page, size, sort: "createdAt,desc" };
   }, [searchParams]);
 
   const { data, isLoading, isError, refetch } = useTicketList(params);
@@ -116,6 +128,17 @@ export function TicketListPage() {
       width: 90,
       render: (s: TicketStatus) => (
         <Tag color={statusColors[s]}>{ticketStatusLabels[s]}</Tag>
+      ),
+    },
+    {
+      title: "SLA",
+      dataIndex: "slaStatus",
+      key: "slaStatus",
+      width: 105,
+      render: (status: TicketSlaStatus, ticket: TicketResponse) => (
+        <Tag color={slaColors[status]} title={`截止 ${new Date(ticket.dueAt).toLocaleString("zh-CN")}`}>
+          {ticketSlaStatusLabels[status]}
+        </Tag>
       ),
     },
     ...(isRequester
@@ -181,7 +204,7 @@ export function TicketListPage() {
         }}
       >
         <Row gutter={[12, 12]}>
-          <Col xs={24} sm={6}>
+          <Col xs={24} sm={5}>
             <Select
               value={params.status || ""}
               onChange={(v) => updateFilter("status", v)}
@@ -189,7 +212,7 @@ export function TicketListPage() {
               style={{ width: "100%" }}
             />
           </Col>
-          <Col xs={24} sm={6}>
+          <Col xs={24} sm={5}>
             <Select
               value={params.priority || ""}
               onChange={(v) => updateFilter("priority", v)}
@@ -197,7 +220,7 @@ export function TicketListPage() {
               style={{ width: "100%" }}
             />
           </Col>
-          <Col xs={24} sm={6}>
+          <Col xs={24} sm={5}>
             <Input
               placeholder="负责人"
               prefix={<SearchOutlined />}
@@ -206,7 +229,23 @@ export function TicketListPage() {
               allowClear
             />
           </Col>
-          <Col xs={24} sm={6}>
+          <Col xs={24} sm={5}>
+            <Select
+              value={
+                params.slaBreached === undefined
+                  ? ""
+                  : String(params.slaBreached)
+              }
+              onChange={(v) => updateFilter("slaBreached", v)}
+              options={[
+                { value: "", label: "全部 SLA" },
+                { value: "true", label: "仅看已超时" },
+                { value: "false", label: "未超时或按时完成" },
+              ]}
+              style={{ width: "100%" }}
+            />
+          </Col>
+          <Col xs={24} sm={4}>
             <Space>
               <Button onClick={() => setSearchParams({})}>重置</Button>
               <Button icon={<ReloadOutlined />} onClick={() => refetch()}>

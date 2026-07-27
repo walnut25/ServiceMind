@@ -13,6 +13,7 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.Instant;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -96,9 +97,13 @@ class TicketServiceTest {
     void scopesRequesterTicketSearchToAuthenticatedUser() {
         PageRequest pageable = PageRequest.of(0, 20);
 
-        service.list(TicketStatus.OPEN, TicketPriority.P1, null, "requester-one", false, pageable);
+        service.list(TicketStatus.OPEN, TicketPriority.P1, null, true,
+                "requester-one", false, pageable);
 
-        verify(ticketRepository).search(TicketStatus.OPEN, TicketPriority.P1, null, "requester-one", pageable);
+        verify(ticketRepository).search(org.mockito.ArgumentMatchers.eq(TicketStatus.OPEN),
+                org.mockito.ArgumentMatchers.eq(TicketPriority.P1), org.mockito.ArgumentMatchers.isNull(),
+                org.mockito.ArgumentMatchers.eq("requester-one"), org.mockito.ArgumentMatchers.eq(true),
+                org.mockito.ArgumentMatchers.any(Instant.class), org.mockito.ArgumentMatchers.eq(pageable));
     }
 
     @Test
@@ -122,5 +127,27 @@ class TicketServiceTest {
 
         assertThatThrownBy(() -> service.assign(42L, "requester-one", "admin"))
                 .isInstanceOf(InvalidTicketAssigneeException.class);
+    }
+
+    @Test
+    void buildsOperationalMetricsFromRepositoryCounts() {
+        when(ticketRepository.count()).thenReturn(12L);
+        when(ticketRepository.countByStatusIn(org.mockito.ArgumentMatchers.anyCollection())).thenReturn(7L);
+        when(ticketRepository.countUnassignedInStatuses(org.mockito.ArgumentMatchers.anyCollection())).thenReturn(3L);
+        when(ticketRepository.countSlaBreached(org.mockito.ArgumentMatchers.any(Instant.class))).thenReturn(2L);
+        when(ticketRepository.countDueSoon(org.mockito.ArgumentMatchers.any(Instant.class),
+                org.mockito.ArgumentMatchers.any(Instant.class))).thenReturn(1L);
+        when(ticketRepository.countByStatus(TicketStatus.OPEN)).thenReturn(5L);
+        when(ticketRepository.countByPriority(TicketPriority.P1)).thenReturn(4L);
+
+        TicketMetrics metrics = service.metrics();
+
+        assertThat(metrics.total()).isEqualTo(12);
+        assertThat(metrics.active()).isEqualTo(7);
+        assertThat(metrics.unassignedActive()).isEqualTo(3);
+        assertThat(metrics.breached()).isEqualTo(2);
+        assertThat(metrics.dueSoon()).isEqualTo(1);
+        assertThat(metrics.byStatus()).containsEntry(TicketStatus.OPEN, 5L);
+        assertThat(metrics.byPriority()).containsEntry(TicketPriority.P1, 4L);
     }
 }

@@ -1,5 +1,10 @@
 import { apiClient } from "./client";
-import type { TicketResponse, CreateTicketRequest, TicketListParams } from "@/types/ticket";
+import type {
+  TicketResponse,
+  CreateTicketRequest,
+  TicketListParams,
+  TicketMetrics,
+} from "@/types/ticket";
 import type { PageResponse } from "@/types/api";
 import type { TicketStatus } from "@/types/domain";
 
@@ -10,6 +15,9 @@ export async function fetchTickets(
   if (params.status) sp.set("status", params.status);
   if (params.priority) sp.set("priority", params.priority);
   if (params.assignee) sp.set("assignee", params.assignee);
+  if (params.slaBreached !== undefined) {
+    sp.set("slaBreached", String(params.slaBreached));
+  }
   sp.set("page", String(params.page));
   sp.set("size", String(params.size));
   if (params.sort) sp.set("sort", params.sort);
@@ -19,6 +27,11 @@ export async function fetchTickets(
 
 export async function fetchTicket(id: number): Promise<TicketResponse> {
   const r = await apiClient.get<TicketResponse>(`/tickets/${id}`);
+  return r.data;
+}
+
+export async function fetchTicketMetrics(): Promise<TicketMetrics> {
+  const r = await apiClient.get<TicketMetrics>("/tickets/metrics");
   return r.data;
 }
 

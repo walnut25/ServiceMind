@@ -19,6 +19,7 @@ import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.time.Instant;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -56,12 +57,30 @@ class MySqlRepositoryIT {
         ticketRepository.saveAndFlush(ticket);
 
         var results = ticketRepository.search(TicketStatus.OPEN, TicketPriority.P1, "agent-one",
-                "requester-one", PageRequest.of(0, 20));
+                "requester-one", false, Instant.now(), PageRequest.of(0, 20));
 
         assertThat(results).singleElement().satisfies(found -> {
             assertThat(found.getRequesterUsername()).isEqualTo("requester-one");
             assertThat(found.getAssigneeUsername()).isEqualTo("agent-one");
+            assertThat(found.getDueAt()).isAfter(found.getCreatedAt());
         });
+    }
+
+    @Test
+    void filtersBreachedTicketsAndCalculatesSlaMetrics() {
+        Ticket late = new Ticket("Production outage", "Checkout unavailable", TicketPriority.P1,
+                "requester-sla", Instant.now().minusSeconds(5 * 60 * 60));
+        Ticket onTrack = new Ticket("Production latency", "Checkout is slow", TicketPriority.P1,
+                "requester-sla");
+        ticketRepository.saveAllAndFlush(Set.of(late, onTrack));
+
+        var breached = ticketRepository.search(null, null, null, "requester-sla",
+                true, Instant.now(), PageRequest.of(0, 20));
+
+        assertThat(breached).extracting(Ticket::getTitle).containsExactly("Production outage");
+        assertThat(ticketRepository.countSlaBreached(Instant.now())).isGreaterThanOrEqualTo(1);
+        assertThat(ticketRepository.countDueSoon(Instant.now(), Instant.now().plusSeconds(6 * 60 * 60)))
+                .isGreaterThanOrEqualTo(1);
     }
 
     @Test
