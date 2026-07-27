@@ -107,6 +107,7 @@ export function AppLayout() {
   const { token: themeToken } = theme.useToken();
 
   const isMobile = !screens.lg;
+  const sidebarBackground = themeToken.colorBgContainer;
 
   const visibleNavItems = allNavItems.filter((item) =>
     item.roles.some((role) => roles.includes(role))
@@ -147,7 +148,7 @@ export function AppLayout() {
   ];
 
   const sidebarContent = (
-    <>
+    <div style={{ height: "100%", background: sidebarBackground }}>
       <div
         style={{
           height: 64,
@@ -169,18 +170,24 @@ export function AppLayout() {
         </span>
       </div>
       <Menu
+        theme="light"
         mode="inline"
         selectedKeys={selectedKey ? [selectedKey] : []}
         items={menuItems}
-        style={{ borderInlineEnd: "none" }}
+        style={{
+          borderInlineEnd: "none",
+          background: sidebarBackground,
+          paddingTop: 8,
+        }}
       />
-    </>
+    </div>
   );
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
       {!isMobile && (
         <Sider
+          theme="light"
           collapsible
           collapsed={collapsed}
           onCollapse={setCollapsed}
@@ -192,6 +199,8 @@ export function AppLayout() {
             left: 0,
             top: 0,
             bottom: 0,
+            background: sidebarBackground,
+            borderRight: `1px solid ${themeToken.colorBorderSecondary}`,
           }}
         >
           {sidebarContent}
