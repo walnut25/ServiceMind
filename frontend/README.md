@@ -84,7 +84,7 @@ docker compose up -d
 
 | 变量 | 说明 | 默认值 |
 |------|------|--------|
-| `VITE_API_BASE_URL` | 后端 API 地址 | `http://localhost:8081` |
+| `VITE_API_BASE_URL` | API 基础路径 | `/api/v1` |
 | `E2E_BASE_URL` | E2E 测试前端地址 | `http://localhost:5173` |
 | `E2E_API_URL` | E2E 测试后端地址 | `http://localhost:8081` |
 | `E2E_REQUESTER_USERNAME` | 普通用户测试账号 | — |
@@ -119,10 +119,12 @@ npm test
 # 监听模式
 npm run test:watch
 
-# E2E 测试（需要先启动后端）
-npx playwright install
-npx playwright test
+# E2E 测试（需要先启动后端；测试账号会自动创建）
+npx playwright install chromium
+npm run test:e2e
 ```
+
+如果 Playwright 浏览器尚未下载，也可以设置 `E2E_USE_INSTALLED_CHROME=true`，直接使用本机 Google Chrome。
 
 ## AI 配置
 

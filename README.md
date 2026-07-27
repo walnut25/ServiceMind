@@ -151,7 +151,7 @@ curl -X PATCH http://localhost:8081/api/v1/tickets/1/status \
 | Area | Endpoints | Access |
 | --- | --- | --- |
 | Authentication | `POST /api/v1/auth/login` | Public |
-| Users | Create, get, list, enable, disable | Administrator |
+| Users | Create, get, list, enable, disable; list assignment candidates | Administration requires admin; candidates allow agent/admin |
 | Tickets | Create, get, list/filter, assign, transition | Authenticated; assignment/transition require agent or admin |
 | Comments | Add and list ticket comments | Requester owns ticket, or agent/admin |
 | Audit | List ticket audit events | Agent or admin |
@@ -178,7 +178,7 @@ Run the complete suite against a disposable MySQL 8.4 container:
 ./mvnw verify -Pintegration
 ```
 
-The suite currently contains 30 unit/API tests and 3 MySQL integration tests. GitHub Actions executes
+The suite currently contains 33 unit/API tests and 3 MySQL integration tests. GitHub Actions executes
 the complete suite and builds the application image for every push and pull request targeting `master`.
 
 Run the repeatable end-to-end user journey (PowerShell):

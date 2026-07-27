@@ -21,12 +21,12 @@ Run every command from the repository root.
 .\mvnw.cmd clean test
 ```
 
-This runs 30 unit, domain, and MockMvc API/security tests. It does not need Docker.
+This runs 33 unit, domain, and MockMvc API/security tests. It does not need Docker.
 
 Expected result:
 
 ```text
-Tests run: 30, Failures: 0, Errors: 0, Skipped: 0
+Tests run: 33, Failures: 0, Errors: 0, Skipped: 0
 BUILD SUCCESS
 ```
 
@@ -40,7 +40,7 @@ Start Docker Desktop, then run:
 
 The integration profile adds three Testcontainers tests against MySQL 8.4. Flyway applies the real
 migrations and the tests verify persistence, role storage, optimistic locking, and full-text search.
-The complete suite therefore runs 33 tests.
+The complete suite therefore runs 36 tests.
 
 ## 3. End-to-end system test
 
