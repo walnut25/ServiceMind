@@ -1,4 +1,4 @@
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -49,6 +49,8 @@ const features = [
   },
 ];
 
+const workflowSteps = ["提交需求", "智能分派", "协同处理", "沉淀知识"];
+
 export function LoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -66,8 +68,7 @@ export function LoginPage() {
   });
 
   if (isAuthenticated) {
-    navigate("/dashboard", { replace: true });
-    return null;
+    return <Navigate to="/dashboard" replace />;
   }
 
   const onSubmit = async (values: LoginFormValues) => {
@@ -109,8 +110,33 @@ export function LoginPage() {
           justifyContent: "center",
           padding: "48px 64px",
           color: "#fff",
+          position: "relative",
+          overflow: "hidden",
         }}
       >
+        <div
+          style={{
+            position: "absolute",
+            width: 360,
+            height: 360,
+            borderRadius: "50%",
+            background: "rgba(255,255,255,0.06)",
+            top: -160,
+            right: -120,
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            width: 220,
+            height: 220,
+            borderRadius: "50%",
+            border: "1px solid rgba(255,255,255,0.12)",
+            bottom: 72,
+            left: -110,
+          }}
+        />
+        <div style={{ width: "100%", maxWidth: 640, position: "relative", zIndex: 1 }}>
         <Title
           level={1}
           style={{
@@ -126,14 +152,14 @@ export function LoginPage() {
           style={{
             color: "rgba(255,255,255,0.85)",
             fontSize: 16,
-            marginBottom: 40,
+            marginBottom: 32,
             display: "block",
           }}
         >
           智能服务管理平台 — 让每一次服务都值得信赖
         </Text>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {features.map((feature) => (
             <div
               key={feature.title}
@@ -142,8 +168,10 @@ export function LoginPage() {
                 alignItems: "flex-start",
                 gap: 12,
                 background: "rgba(255,255,255,0.1)",
+                border: "1px solid rgba(255,255,255,0.08)",
                 borderRadius: 12,
-                padding: "16px 20px",
+                padding: "14px 18px",
+                backdropFilter: "blur(8px)",
               }}
             >
               <span style={{ fontSize: 24, opacity: 0.9 }}>
@@ -165,16 +193,100 @@ export function LoginPage() {
 
         <div
           style={{
-            marginTop: "auto",
-            opacity: 0.5,
+            marginTop: 20,
+            padding: "18px 20px",
+            borderRadius: 14,
+            background: "rgba(15, 23, 42, 0.2)",
+            border: "1px solid rgba(255,255,255,0.12)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: 14,
+            }}
+          >
+            <Text style={{ color: "#fff", fontWeight: 600 }}>服务流转概览</Text>
+            <span
+              style={{
+                padding: "3px 9px",
+                borderRadius: 999,
+                background: "rgba(52, 211, 153, 0.16)",
+                color: "#A7F3D0",
+                fontSize: 12,
+              }}
+            >
+              全流程可追踪
+            </span>
+          </div>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+              gap: 8,
+            }}
+          >
+            {workflowSteps.map((step, index) => (
+              <div key={step} style={{ minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span
+                    style={{
+                      width: 24,
+                      height: 24,
+                      flex: "0 0 24px",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      borderRadius: "50%",
+                      background:
+                        index === workflowSteps.length - 1
+                          ? "#34D399"
+                          : "rgba(255,255,255,0.16)",
+                      fontSize: 12,
+                      fontWeight: 700,
+                    }}
+                  >
+                    {index + 1}
+                  </span>
+                  {index < workflowSteps.length - 1 && (
+                    <span
+                      style={{
+                        height: 1,
+                        flex: 1,
+                        background: "rgba(255,255,255,0.22)",
+                      }}
+                    />
+                  )}
+                </div>
+                <div
+                  style={{
+                    marginTop: 8,
+                    color: "rgba(255,255,255,0.82)",
+                    fontSize: 12,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {step}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div
+          style={{
+            opacity: 0.55,
             fontSize: 12,
-            paddingTop: 48,
+            paddingTop: 24,
           }}
         >
           <Text style={{ color: "inherit", fontSize: "inherit" }}>
             &copy; {new Date().getFullYear()} ServiceMind. 企业内部客服与 IT
             支持平台。
           </Text>
+        </div>
         </div>
       </div>
 
