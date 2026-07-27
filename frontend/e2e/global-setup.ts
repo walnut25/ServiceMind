@@ -23,14 +23,17 @@ const accounts: TestAccount[] = [
 
 async function waitForBackend(): Promise<void> {
   const deadline = Date.now() + 60_000;
+  const retry = () => new Promise((resolve) => setTimeout(resolve, 1_000));
+
   while (Date.now() < deadline) {
     try {
       const response = await fetch(`${apiUrl}/actuator/health`);
       if (response.ok && (await response.json()).status === "UP") return;
     } catch {
-      // The backend may still be starting.
+      await retry();
+      continue;
     }
-    await new Promise((resolve) => setTimeout(resolve, 1_000));
+    await retry();
   }
   throw new Error(`Backend did not become healthy at ${apiUrl}`);
 }

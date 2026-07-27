@@ -146,7 +146,6 @@ export function TicketDetailPage() {
   const allowedTransitions = getAllowedTransitions(ticket.status);
   const availableAssignees = usersData?.content ?? [];
 
-  // --- Comment tab ---
   const commentPanel = (
     <div>
       {commentsLoading ? (
@@ -210,7 +209,6 @@ export function TicketDetailPage() {
     </div>
   );
 
-  // --- Audit tab ---
   const auditItems = auditData?.content.map((a) => ({
     color: a.eventType === "TICKET_CREATED" ? "green"
          : a.eventType === "STATUS_CHANGED" ? "blue"
@@ -234,7 +232,6 @@ export function TicketDetailPage() {
     />
   );
 
-  // --- Tabs ---
   const tabItems = [
     { key: "comments", label: "评论", children: commentPanel },
   ];
@@ -250,7 +247,6 @@ export function TicketDetailPage() {
       </Button>
 
       <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
-        {/* Left */}
         <div style={{ flex: "1 1 500px", minWidth: 0 }}>
           <Card>
             <Title level={4} style={{ marginTop: 0 }}>{ticket.title}</Title>
@@ -269,7 +265,6 @@ export function TicketDetailPage() {
           </Card>
         </div>
 
-        {/* Right sidebar */}
         <div style={{ flex: "0 0 280px" }}>
           <Card title="工单信息" size="small">
             <Descriptions column={1} size="small" colon={false}>
@@ -290,7 +285,6 @@ export function TicketDetailPage() {
           {canManage && (
             <Card title="操作" size="small" style={{ marginTop: 16 }}>
               <Space direction="vertical" style={{ width: "100%" }}>
-                {/* Status transitions */}
                 {allowedTransitions.map((target) =>
                   target === "CLOSED" ? (
                     <Popconfirm
@@ -327,7 +321,6 @@ export function TicketDetailPage() {
 
                 <Divider style={{ margin: "4px 0" }} />
 
-                {/* Assign button */}
                 <Button
                   icon={<UserSwitchOutlined />}
                   block
@@ -341,7 +334,6 @@ export function TicketDetailPage() {
         </div>
       </div>
 
-      {/* Assign Modal */}
       <Modal
         title="分配负责人"
         open={assignModalOpen}
