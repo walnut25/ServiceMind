@@ -175,7 +175,7 @@ curl -X PATCH http://localhost:8081/api/v1/tickets/1/status \
 ./mvnw verify -Pintegration
 ```
 
-当前包含 33 项单元/API 测试和 3 项 MySQL 集成测试。针对 `master` 的每次推送与拉取请求，
+当前包含 33 项单元/API 测试和 3 项 MySQL 集成测试。针对 `main` 的每次推送与拉取请求，
 GitHub Actions 都会执行完整测试并构建应用镜像。
 
 运行可重复的端到端用户旅程（PowerShell）：

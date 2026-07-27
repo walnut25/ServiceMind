@@ -179,7 +179,7 @@ Run the complete suite against a disposable MySQL 8.4 container:
 ```
 
 The suite currently contains 33 unit/API tests and 3 MySQL integration tests. GitHub Actions executes
-the complete suite and builds the application image for every push and pull request targeting `master`.
+the complete suite and builds the application image for every push and pull request targeting `main`.
 
 Run the repeatable end-to-end user journey (PowerShell):
 
