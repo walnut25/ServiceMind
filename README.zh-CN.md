@@ -18,7 +18,7 @@ Smart Service 是一个 AI 辅助企业服务台平台，在一个模块化 Spri
 | 领域 | 已实现能力 |
 | --- | --- |
 | 安全流程 | 无状态 JWT 认证、BCrypt 密码、管理员用户管理、RBAC，以及请求人范围内的工单访问 |
-| 工单运营 | 优先级、指派、筛选、分页、受控状态流转、评论和不可变审计事件 |
+| 工单运营 | 按优先级计算 SLA 截止时间、超时筛选、积压指标、指派、受控流转、评论和不可变审计事件 |
 | 知识生命周期 | 草稿、发布、归档、乐观锁、可见性规则和 MySQL 全文搜索 |
 | 有依据的 AI | 已发布文章检索、提示词注入边界、可配置的 OpenAI 兼容供应商和来源引用 |
 | 可靠性 | Flyway 迁移、RFC 9457 问题响应、健康/指标端点、Docker 健康检查和非 root 容器 |
@@ -59,7 +59,7 @@ flowchart LR
 | 模块 | 职责 | 主要能力 |
 | --- | --- | --- |
 | `identity` | 身份认证与授权 | 用户管理、BCrypt、JWT 签发、角色、管理员初始化 |
-| `ticket` | 支持请求工作流 | 所有权、指派、状态流转、评论、审计轨迹 |
+| `ticket` | 支持请求工作流 | 所有权、SLA 跟踪、运营指标、指派、状态流转、评论、审计轨迹 |
 | `knowledge` | 运维知识 | 文章生命周期、可见性规则、分页、全文搜索 |
 | `ai` | 有依据的支持回答 | 知识检索、上下文限制、供应商网关、来源引用 |
 | `common` | 跨模块 HTTP 能力 | Problem Details、OpenAPI 元数据、稳定分页序列化 |
@@ -70,6 +70,7 @@ flowchart LR
 - Spring Web、Validation、Data JPA、Security、OAuth2 Resource Server 和 Actuator
 - MySQL 8.4、Flyway 数据库迁移与全文索引
 - Springdoc OpenAPI 与 Swagger UI
+- React、TypeScript、TanStack Query 与 Ant Design
 - JUnit 5、Mockito、MockMvc、AssertJ 和 Testcontainers
 - Docker 多阶段构建与 Docker Compose
 - GitHub Actions 持续集成
@@ -141,6 +142,9 @@ curl -X PATCH http://localhost:8081/api/v1/tickets/1/status \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <access-token>" \
   -d '{"status":"IN_PROGRESS"}'
+
+curl http://localhost:8081/api/v1/tickets/metrics \
+  -H "Authorization: Bearer <access-token>"
 ```
 
 ## API 概览
@@ -149,7 +153,8 @@ curl -X PATCH http://localhost:8081/api/v1/tickets/1/status \
 | --- | --- | --- |
 | 身份认证 | `POST /api/v1/auth/login` | 公开 |
 | 用户 | 创建、查询、列表、启用、禁用；查询可分配人员 | 用户管理要求管理员；候选人查询允许坐席/管理员 |
-| 工单 | 创建、查询、列表/筛选、指派、流转 | 已认证；指派/流转要求坐席或管理员 |
+| 工单 | 创建、查询、列表/筛选（含 SLA 超时）、指派、流转 | 已认证；指派/流转要求坐席或管理员 |
+| 运营指标 | 积压、待分配、已超时和即将到期数量 | 坐席或管理员 |
 | 评论 | 添加和查询工单评论 | 工单请求人，或坐席/管理员 |
 | 审计 | 查询工单审计事件 | 坐席或管理员 |
 | 知识 | 创建、更新、发布、归档、列表、搜索 | 读取需认证；写入要求坐席或管理员 |
@@ -175,7 +180,7 @@ curl -X PATCH http://localhost:8081/api/v1/tickets/1/status \
 ./mvnw verify -Pintegration
 ```
 
-当前包含 33 项单元/API 测试和 3 项 MySQL 集成测试。针对 `main` 的每次推送与拉取请求，
+当前包含 42 项单元/API 测试和 4 项 MySQL 集成测试。针对 `main` 的每次推送与拉取请求，
 GitHub Actions 都会执行完整测试并构建应用镜像。
 
 运行可重复的端到端用户旅程（PowerShell）：

@@ -12,6 +12,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.EnumMap;
+import java.util.Map;
+import java.util.Set;
+
 @Service
 @Transactional
 public class TicketService {
@@ -52,9 +58,33 @@ public class TicketService {
 
     @Transactional(readOnly = true)
     public Page<Ticket> list(TicketStatus status, TicketPriority priority, String assignee,
-                             String username, boolean canManage, Pageable pageable) {
+                             Boolean slaBreached, String username, boolean canManage, Pageable pageable) {
         String requester = canManage ? null : username;
-        return repository.search(status, priority, normalize(assignee), requester, pageable);
+        return repository.search(status, priority, normalize(assignee), requester, slaBreached,
+                Instant.now(), pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public TicketMetrics metrics() {
+        Instant now = Instant.now();
+        Set<TicketStatus> activeStatuses = Set.of(TicketStatus.OPEN, TicketStatus.IN_PROGRESS);
+        EnumMap<TicketStatus, Long> byStatus = new EnumMap<>(TicketStatus.class);
+        EnumMap<TicketPriority, Long> byPriority = new EnumMap<>(TicketPriority.class);
+        for (TicketStatus status : TicketStatus.values()) {
+            byStatus.put(status, repository.countByStatus(status));
+        }
+        for (TicketPriority priority : TicketPriority.values()) {
+            byPriority.put(priority, repository.countByPriority(priority));
+        }
+        return new TicketMetrics(
+                now,
+                repository.count(),
+                repository.countByStatusIn(activeStatuses),
+                repository.countUnassignedInStatuses(activeStatuses),
+                repository.countSlaBreached(now),
+                repository.countDueSoon(now, now.plus(Duration.ofHours(4))),
+                Map.copyOf(byStatus),
+                Map.copyOf(byPriority));
     }
 
     public Ticket transition(long id, TicketStatus status, String actorUsername) {

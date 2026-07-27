@@ -20,12 +20,12 @@
 .\mvnw.cmd clean test
 ```
 
-该命令运行 33 项单元、领域和 MockMvc API/安全测试，不需要 Docker。
+该命令运行 42 项单元、领域和 MockMvc API/安全测试，不需要 Docker。
 
 预期结果：
 
 ```text
-Tests run: 33, Failures: 0, Errors: 0, Skipped: 0
+Tests run: 42, Failures: 0, Errors: 0, Skipped: 0
 BUILD SUCCESS
 ```
 
@@ -37,8 +37,8 @@ BUILD SUCCESS
 .\mvnw.cmd verify -Pintegration
 ```
 
-集成测试配置会通过 Testcontainers 启动 MySQL 8.4，并额外运行 3 项测试。Flyway 会执行真实
-迁移，测试会验证数据持久化、角色存储、乐观锁和全文搜索。因此完整测试共 36 项。
+集成测试配置会通过 Testcontainers 启动 MySQL 8.4，并额外运行 4 项测试。Flyway 会执行真实
+迁移，测试会验证数据持久化、角色存储、SLA 超时查询和全文搜索。因此完整测试共 46 项。
 
 ## 3. 端到端系统测试
 
@@ -48,6 +48,7 @@ BUILD SUCCESS
 - JWT 登录和用户管理
 - 基于角色的访问控制与请求人工单隔离
 - 工单创建、指派、状态流转、评论和审计历史
+- SLA 截止时间迁移、超时筛选和运营统计
 - 知识文章草稿、发布和 MySQL 全文搜索
 - 账号禁用和登录拒绝
 

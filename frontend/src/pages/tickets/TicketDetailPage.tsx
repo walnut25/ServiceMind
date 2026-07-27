@@ -31,10 +31,14 @@ import {
   useAssignableUsers,
 } from "@/hooks/useTickets";
 import { useAuthStore } from "@/stores/auth";
-import { ticketStatusLabels, ticketPriorityLabels } from "@/utils/enums";
+import {
+  ticketStatusLabels,
+  ticketPriorityLabels,
+  ticketSlaStatusLabels,
+} from "@/utils/enums";
 import { getAllowedTransitions, transitionLabels } from "@/utils/ticketTransitions";
 import { formatAuditEvent } from "@/utils/auditFormat";
-import type { TicketStatus, TicketPriority } from "@/types/domain";
+import type { TicketStatus, TicketPriority, TicketSlaStatus } from "@/types/domain";
 import type { ApiError } from "@/types/error";
 
 const { Title, Paragraph, Text } = Typography;
@@ -45,6 +49,9 @@ const priorityColors: Record<TicketPriority, string> = {
 };
 const statusColors: Record<TicketStatus, string> = {
   OPEN: "blue", IN_PROGRESS: "processing", RESOLVED: "success", CLOSED: "default",
+};
+const slaColors: Record<TicketSlaStatus, string> = {
+  ON_TRACK: "processing", BREACHED: "error", MET: "success",
 };
 
 export function TicketDetailPage() {
@@ -253,6 +260,9 @@ export function TicketDetailPage() {
             <Space style={{ marginBottom: 16 }}>
               <Tag color={priorityColors[ticket.priority]}>{ticketPriorityLabels[ticket.priority]}</Tag>
               <Tag color={statusColors[ticket.status]}>{ticketStatusLabels[ticket.status]}</Tag>
+              <Tag color={slaColors[ticket.slaStatus]}>
+                SLA：{ticketSlaStatusLabels[ticket.slaStatus]}
+              </Tag>
             </Space>
             <Divider />
             <Paragraph style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
@@ -279,6 +289,16 @@ export function TicketDetailPage() {
               <Descriptions.Item label="更新时间">
                 {new Date(ticket.updatedAt).toLocaleString("zh-CN")}
               </Descriptions.Item>
+              <Descriptions.Item label="SLA 截止时间">
+                <Text type={ticket.slaStatus === "BREACHED" ? "danger" : undefined}>
+                  {new Date(ticket.dueAt).toLocaleString("zh-CN")}
+                </Text>
+              </Descriptions.Item>
+              {ticket.resolvedAt && (
+                <Descriptions.Item label="完成时间">
+                  {new Date(ticket.resolvedAt).toLocaleString("zh-CN")}
+                </Descriptions.Item>
+              )}
             </Descriptions>
           </Card>
 

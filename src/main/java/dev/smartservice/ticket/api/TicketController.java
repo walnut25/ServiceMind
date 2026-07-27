@@ -1,11 +1,13 @@
 package dev.smartservice.ticket.api;
 
+import dev.smartservice.ticket.application.TicketMetrics;
 import dev.smartservice.ticket.application.TicketService;
 import dev.smartservice.ticket.domain.Ticket;
 import dev.smartservice.ticket.domain.TicketAuditEvent;
 import dev.smartservice.ticket.domain.TicketAuditEventType;
 import dev.smartservice.ticket.domain.TicketComment;
 import dev.smartservice.ticket.domain.TicketPriority;
+import dev.smartservice.ticket.domain.TicketSlaStatus;
 import dev.smartservice.ticket.domain.TicketStatus;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -80,10 +82,20 @@ public class TicketController {
             @RequestParam(required = false) TicketStatus status,
             @RequestParam(required = false) TicketPriority priority,
             @RequestParam(required = false) @Size(max = 100) String assignee,
+            @RequestParam(required = false) Boolean slaBreached,
             @PageableDefault(size = 20) Pageable pageable,
             Authentication authentication) {
-        return service.list(status, priority, assignee, authentication.getName(), canManage(authentication), pageable)
+        return service.list(status, priority, assignee, slaBreached, authentication.getName(),
+                        canManage(authentication), pageable)
                 .map(TicketResponse::from);
+    }
+
+    @GetMapping("/metrics")
+    @PreAuthorize("hasAnyRole('ADMIN', 'AGENT')")
+    @Operation(summary = "Get ticket operations metrics",
+            description = "Returns backlog, assignment, and SLA risk counts for support staff")
+    public TicketMetrics metrics() {
+        return service.metrics();
     }
 
     @PatchMapping("/{id}/status")
@@ -178,11 +190,13 @@ public class TicketController {
 
     public record TicketResponse(long id, String title, String description, TicketPriority priority,
                                  TicketStatus status, String requesterUsername, String assigneeUsername,
-                                 Instant createdAt, Instant updatedAt, long version) {
+                                 Instant createdAt, Instant updatedAt, Instant dueAt, Instant resolvedAt,
+                                 TicketSlaStatus slaStatus, long version) {
         static TicketResponse from(Ticket ticket) {
             return new TicketResponse(ticket.getId(), ticket.getTitle(), ticket.getDescription(),
                     ticket.getPriority(), ticket.getStatus(), ticket.getRequesterUsername(),
-                    ticket.getAssigneeUsername(), ticket.getCreatedAt(), ticket.getUpdatedAt(), ticket.getVersion());
+                    ticket.getAssigneeUsername(), ticket.getCreatedAt(), ticket.getUpdatedAt(), ticket.getDueAt(),
+                    ticket.getResolvedAt(), ticket.slaStatusAt(Instant.now()), ticket.getVersion());
         }
     }
 

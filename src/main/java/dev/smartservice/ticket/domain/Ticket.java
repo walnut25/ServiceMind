@@ -46,6 +46,12 @@ public class Ticket {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+    @Column(name = "due_at", nullable = false, updatable = false)
+    private Instant dueAt;
+
+    @Column(name = "resolved_at")
+    private Instant resolvedAt;
+
     @Version
     private long version;
 
@@ -53,13 +59,19 @@ public class Ticket {
     }
 
     public Ticket(String title, String description, TicketPriority priority, String requesterUsername) {
+        this(title, description, priority, requesterUsername, Instant.now());
+    }
+
+    public Ticket(String title, String description, TicketPriority priority, String requesterUsername,
+                  Instant createdAt) {
         this.title = title;
         this.description = description;
         this.priority = priority;
         this.status = TicketStatus.OPEN;
         this.requesterUsername = requesterUsername;
-        this.createdAt = Instant.now();
+        this.createdAt = createdAt;
         this.updatedAt = createdAt;
+        this.dueAt = TicketSlaPolicy.deadlineFor(priority, createdAt);
     }
 
     public void assignTo(String assigneeUsername) {
@@ -75,8 +87,21 @@ public class Ticket {
         if (!status.canTransitionTo(target)) {
             throw new InvalidTicketTransitionException(status, target);
         }
+        Instant transitionedAt = Instant.now();
         status = target;
-        updatedAt = Instant.now();
+        if (target == TicketStatus.RESOLVED || target == TicketStatus.CLOSED) {
+            resolvedAt = resolvedAt == null ? transitionedAt : resolvedAt;
+        } else if (target == TicketStatus.IN_PROGRESS) {
+            resolvedAt = null;
+        }
+        updatedAt = transitionedAt;
+    }
+
+    public TicketSlaStatus slaStatusAt(Instant now) {
+        if (resolvedAt != null) {
+            return resolvedAt.isAfter(dueAt) ? TicketSlaStatus.BREACHED : TicketSlaStatus.MET;
+        }
+        return now.isAfter(dueAt) ? TicketSlaStatus.BREACHED : TicketSlaStatus.ON_TRACK;
     }
 
     public Long getId() { return id; }
@@ -88,5 +113,7 @@ public class Ticket {
     public String getAssigneeUsername() { return assigneeUsername; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
+    public Instant getDueAt() { return dueAt; }
+    public Instant getResolvedAt() { return resolvedAt; }
     public long getVersion() { return version; }
 }

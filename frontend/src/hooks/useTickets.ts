@@ -9,6 +9,7 @@ import {
   transitionTicket,
   assignTicket,
   fetchAssignableUsers,
+  fetchTicketMetrics,
 } from "@/api/tickets";
 import type { TicketListParams, CreateTicketRequest } from "@/types/ticket";
 import type { TicketStatus } from "@/types/domain";
@@ -22,6 +23,7 @@ export const ticketKeys = {
   comments: (id: number) => [...ticketKeys.detail(id), "comments"] as const,
   audit: (id: number) => [...ticketKeys.detail(id), "audit"] as const,
   assignees: ["users", "assignees"] as const,
+  metrics: () => [...ticketKeys.all, "metrics"] as const,
 };
 
 export function useTicketList(params: TicketListParams) {
@@ -29,6 +31,15 @@ export function useTicketList(params: TicketListParams) {
     queryKey: ticketKeys.list(params),
     queryFn: () => fetchTickets(params),
     placeholderData: (prev) => prev,
+  });
+}
+
+export function useTicketMetrics(enabled = true) {
+  return useQuery({
+    queryKey: ticketKeys.metrics(),
+    queryFn: fetchTicketMetrics,
+    enabled,
+    refetchInterval: 60_000,
   });
 }
 
@@ -44,7 +55,10 @@ export function useCreateTicket() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: CreateTicketRequest) => createTicket(data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ticketKeys.lists() }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ticketKeys.lists() });
+      qc.invalidateQueries({ queryKey: ticketKeys.metrics() });
+    },
   });
 }
 
@@ -83,6 +97,7 @@ export function useTransitionTicket(ticketId: number) {
       qc.invalidateQueries({ queryKey: ticketKeys.detail(ticketId) });
       qc.invalidateQueries({ queryKey: ticketKeys.lists() });
       qc.invalidateQueries({ queryKey: ticketKeys.audit(ticketId) });
+      qc.invalidateQueries({ queryKey: ticketKeys.metrics() });
     },
   });
 }
@@ -95,6 +110,7 @@ export function useAssignTicket(ticketId: number) {
       qc.invalidateQueries({ queryKey: ticketKeys.detail(ticketId) });
       qc.invalidateQueries({ queryKey: ticketKeys.lists() });
       qc.invalidateQueries({ queryKey: ticketKeys.audit(ticketId) });
+      qc.invalidateQueries({ queryKey: ticketKeys.metrics() });
     },
   });
 }

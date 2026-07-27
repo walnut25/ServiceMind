@@ -101,6 +101,8 @@ erDiagram
         VARCHAR assignee_username
         TIMESTAMP created_at
         TIMESTAMP updated_at
+        TIMESTAMP due_at
+        TIMESTAMP resolved_at
         BIGINT version
     }
 
@@ -140,6 +142,11 @@ erDiagram
 Actor, requester, and assignee usernames are stored as operational snapshots rather than foreign keys.
 The application validates assignees through the identity module, while historical audit records remain
 readable even if account management changes later.
+
+Each ticket receives an immutable deadline when created: P1 in 4 hours, P2 in 8 hours, P3 in 24 hours,
+and P4 in 72 hours. Completion time is retained for historical SLA reporting and cleared when a resolved
+ticket is reopened. Repository queries calculate current breaches and due-soon work without loading the
+full backlog into application memory.
 
 ## Ticket workflow
 

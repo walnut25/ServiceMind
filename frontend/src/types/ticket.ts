@@ -1,4 +1,4 @@
-import type { TicketStatus, TicketPriority } from "@/types/domain";
+import type { TicketStatus, TicketPriority, TicketSlaStatus } from "@/types/domain";
 
 export interface TicketResponse {
   id: number;
@@ -10,6 +10,9 @@ export interface TicketResponse {
   assigneeUsername: string | null;
   createdAt: string;
   updatedAt: string;
+  dueAt: string;
+  resolvedAt: string | null;
+  slaStatus: TicketSlaStatus;
   version: number;
 }
 
@@ -23,7 +26,19 @@ export interface TicketListParams {
   status?: TicketStatus;
   priority?: TicketPriority;
   assignee?: string;
+  slaBreached?: boolean;
   page: number;
   size: number;
   sort?: string;
+}
+
+export interface TicketMetrics {
+  generatedAt: string;
+  total: number;
+  active: number;
+  unassignedActive: number;
+  breached: number;
+  dueSoon: number;
+  byStatus: Record<TicketStatus, number>;
+  byPriority: Record<TicketPriority, number>;
 }

@@ -1,4 +1,5 @@
 ﻿import type { TicketStatus, TicketPriority, ArticleStatus, TicketAuditEventType } from "@/types/domain";
+import type { TicketSlaStatus } from "@/types/domain";
 
 export const ticketStatusLabels: Record<TicketStatus, string> = {
   OPEN: "待处理",
@@ -12,6 +13,12 @@ export const ticketPriorityLabels: Record<TicketPriority, string> = {
   P2: "高",
   P3: "中",
   P4: "低",
+};
+
+export const ticketSlaStatusLabels: Record<TicketSlaStatus, string> = {
+  ON_TRACK: "正常",
+  BREACHED: "已超时",
+  MET: "按时完成",
 };
 
 export const articleStatusLabels: Record<ArticleStatus, string> = {
