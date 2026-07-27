@@ -5,10 +5,10 @@
 **Smart Service — AI 辅助企业服务台后端**
 
 - 基于 Java 21、Spring Boot 3.5 与 MySQL 8.4 设计模块化单体服务台，完成身份、工单、知识库和
-  RAG 问答 4 个业务模块、21 个 REST 接口。
+  RAG 问答 4 个业务模块、22 个 REST 接口。
 - 实现 JWT + BCrypt + RBAC、请求人数据隔离、受控工单状态机、指派/评论/不可变审计轨迹、
   知识发布与全文检索，并通过乐观锁保护并发更新。
-- 使用 Flyway、Testcontainers、Docker Compose 和 GitHub Actions 建立交付链路；33 项自动化
+- 使用 Flyway、Testcontainers、Docker Compose 和 GitHub Actions 建立交付链路；36 项后端自动化
   测试覆盖领域规则、API 权限及真实 MySQL 行为，另提供可重复的端到端验收脚本。
 
 不要在简历中写“微服务”或“已支撑高并发生产流量”。当前项目是有明确模块边界的模块化单体，
@@ -69,7 +69,7 @@ AI 没有配置真实密钥时，不要临场依赖外部调用；说明默认�
 ### 为什么集成测试一定用 Testcontainers？
 
 H2 无法可靠代表 MySQL 的全文索引、SQL 方言、迁移和锁语义。Testcontainers 每次启动一次性
-MySQL 8.4，测试和部署使用同类数据库；代价是速度更慢，所以把 30 项快速测试与 3 项数据库测试
+MySQL 8.4，测试和部署使用同类数据库；代价是速度更慢，所以把 33 项快速测试与 3 项数据库测试
 分层执行。
 
 ### 用户禁用后，旧 JWT 会立即失效吗？

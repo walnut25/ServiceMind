@@ -148,7 +148,7 @@ curl -X PATCH http://localhost:8081/api/v1/tickets/1/status \
 | 领域 | 接口 | 权限 |
 | --- | --- | --- |
 | 身份认证 | `POST /api/v1/auth/login` | 公开 |
-| 用户 | 创建、查询、列表、启用、禁用 | 管理员 |
+| 用户 | 创建、查询、列表、启用、禁用；查询可分配人员 | 用户管理要求管理员；候选人查询允许坐席/管理员 |
 | 工单 | 创建、查询、列表/筛选、指派、流转 | 已认证；指派/流转要求坐席或管理员 |
 | 评论 | 添加和查询工单评论 | 工单请求人，或坐席/管理员 |
 | 审计 | 查询工单审计事件 | 坐席或管理员 |
@@ -175,7 +175,7 @@ curl -X PATCH http://localhost:8081/api/v1/tickets/1/status \
 ./mvnw verify -Pintegration
 ```
 
-当前包含 30 项单元/API 测试和 3 项 MySQL 集成测试。针对 `master` 的每次推送与拉取请求，
+当前包含 33 项单元/API 测试和 3 项 MySQL 集成测试。针对 `master` 的每次推送与拉取请求，
 GitHub Actions 都会执行完整测试并构建应用镜像。
 
 运行可重复的端到端用户旅程（PowerShell）：
