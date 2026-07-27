@@ -1,10 +1,24 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeAll, beforeEach, afterEach, afterAll } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ConfigProvider, App as AntApp } from "antd";
 import { AssistantPage } from "@/pages/assistant/AssistantPage";
+import { http, HttpResponse } from "msw";
+import { setupServer } from "msw/node";
+
+const server = setupServer(
+  http.post("/api/v1/ai/answers", () =>
+    HttpResponse.json({
+      answer: "No grounded answer is available.",
+      grounded: false,
+      sources: [],
+    })
+  )
+);
+
+beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
 
 function renderPage(route = "/assistant") {
   const qc = new QueryClient({
@@ -31,6 +45,8 @@ describe("AssistantPage", () => {
   afterEach(() => {
     sessionStorage.clear();
   });
+
+  afterAll(() => server.close());
 
   it("shows recommended questions when empty", () => {
     renderPage();

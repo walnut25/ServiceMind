@@ -1,21 +1,23 @@
 import { test, expect } from "@playwright/test";
 
-const REQUESTER_USER = process.env.E2E_REQUESTER_USERNAME || "requester";
-const REQUESTER_PASS = process.env.E2E_REQUESTER_PASSWORD || "change-me";
+const REQUESTER_USER = process.env.E2E_REQUESTER_USERNAME || "e2e-requester";
+const REQUESTER_PASS = process.env.E2E_REQUESTER_PASSWORD || "E2eRequesterPass123!";
 
 test.describe("REQUESTER flow", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/login");
-    await page.fill('input[id="username"]', REQUESTER_USER);
-    await page.fill('input[id="password"]', REQUESTER_PASS);
+    await page.getByPlaceholder("用户名").fill(REQUESTER_USER);
+    await page.getByPlaceholder("密码").fill(REQUESTER_PASS);
     await page.click('button[type="submit"]');
     await page.waitForURL(/dashboard/);
   });
 
   test("can create a ticket", async ({ page }) => {
     await page.goto("/tickets/new");
-    await page.fill('input[id="title"]', "Playwright E2E test ticket");
-    await page.fill('textarea[id="description"]', "Test ticket from Playwright.");
+    await page.getByPlaceholder("简要描述问题").fill("Playwright E2E test ticket");
+    await page
+      .getByPlaceholder("详细描述问题，包括复现步骤、环境信息等")
+      .fill("Test ticket from Playwright.");
     await page.click('button[type="submit"]');
     await page.waitForURL(/tickets\/\d+/);
     await expect(page.locator("h1, h4")).toContainText(/#|Playwright/);
