@@ -11,11 +11,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Set;
+import java.util.List;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
@@ -69,6 +72,29 @@ class UserAccountControllerSecurityTest {
                 .andExpect(jsonPath("$.username").value("agent-one"))
                 .andExpect(jsonPath("$.enabled").value(true))
                 .andExpect(jsonPath("$.roles[0]").value("AGENT"));
+    }
+
+    @Test
+    void allowsAgentToListAssignmentCandidates() throws Exception {
+        UserAccount agent = new UserAccount("agent-one", "encoded-password", Set.of(UserRole.AGENT));
+        ReflectionTestUtils.setField(agent, "id", 42L);
+        when(service.listAssignable(PageRequest.of(0, 100)))
+                .thenReturn(new PageImpl<>(List.of(agent), PageRequest.of(0, 100), 1));
+
+        mockMvc.perform(get("/api/v1/users/assignees")
+                        .with(jwt().jwt(token -> token.subject("agent-one"))
+                                .authorities(new SimpleGrantedAuthority("ROLE_AGENT"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].username").value("agent-one"))
+                .andExpect(jsonPath("$.content[0].roles[0]").value("AGENT"));
+    }
+
+    @Test
+    void forbidsRequesterFromListingAssignmentCandidates() throws Exception {
+        mockMvc.perform(get("/api/v1/users/assignees")
+                        .with(jwt().jwt(token -> token.subject("requester-one"))
+                                .authorities(new SimpleGrantedAuthority("ROLE_REQUESTER"))))
+                .andExpect(status().isForbidden());
     }
 
     private String createUserJson() {

@@ -82,12 +82,23 @@ class MySqlRepositoryIT {
 
     @Test
     void persistsUserAccountRoles() {
-        userAccountRepository.saveAndFlush(
-                new UserAccount("agent-integration", "encoded-password", Set.of(UserRole.AGENT)));
+        UserAccount agent = new UserAccount(
+                "agent-integration", "encoded-password", Set.of(UserRole.AGENT));
+        UserAccount requester = new UserAccount(
+                "requester-integration", "encoded-password", Set.of(UserRole.REQUESTER));
+        UserAccount disabledAdmin = new UserAccount(
+                "disabled-admin-integration", "encoded-password", Set.of(UserRole.ADMIN));
+        disabledAdmin.changeEnabled(false);
+        userAccountRepository.saveAllAndFlush(Set.of(agent, requester, disabledAdmin));
 
         UserAccount account = userAccountRepository.findByUsernameIgnoreCase("AGENT-INTEGRATION").orElseThrow();
+        var assignable = userAccountRepository.findAssignableUsers(
+                Set.of(UserRole.ADMIN, UserRole.AGENT), PageRequest.of(0, 20));
 
         assertThat(account.isEnabled()).isTrue();
         assertThat(account.getRoles()).containsExactly(UserRole.AGENT);
+        assertThat(assignable).extracting(UserAccount::getUsername)
+                .contains("agent-integration")
+                .doesNotContain("requester-integration", "disabled-admin-integration");
     }
 }
