@@ -51,7 +51,7 @@ describe("AssistantPage", () => {
   it("shows recommended questions when empty", () => {
     renderPage();
     expect(
-      screen.getByText("VPN 无法连接怎么办？")
+      screen.getByRole("button", { name: "VPN 无法连接怎么办？" })
     ).toBeDefined();
   });
 
@@ -101,11 +101,33 @@ describe("AssistantPage", () => {
 
   it("clicking recommendation fills and sends question", async () => {
     renderPage();
-    const tag = screen.getByText("VPN 无法连接怎么办？");
-    await userEvent.click(tag);
+    const recommendation = screen.getByRole("button", {
+      name: "VPN 无法连接怎么办？",
+    });
+    await userEvent.click(recommendation);
     expect(
       screen.getByText("VPN 无法连接怎么办？")
     ).toBeDefined();
+  });
+
+  it("renders knowledge sources as semantic buttons", () => {
+    sessionStorage.setItem(
+      "assistant_chat_history",
+      JSON.stringify([
+        {
+          id: "answer-with-source",
+          role: "assistant",
+          content: "answer",
+          grounded: true,
+          sources: [{ articleId: 7, title: "VPN guide" }],
+          timestamp: Date.now(),
+        },
+      ])
+    );
+
+    renderPage();
+
+    expect(screen.getByRole("button", { name: /VPN guide/ })).toBeDefined();
   });
 
   it("Enter key sends the message", async () => {

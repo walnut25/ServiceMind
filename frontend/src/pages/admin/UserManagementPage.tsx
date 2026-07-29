@@ -13,6 +13,7 @@ import {
   Typography,
   App,
   Popconfirm,
+  Form,
 } from "antd";
 import {
   PlusOutlined,
@@ -239,73 +240,70 @@ export function UserManagementPage() {
         maskClosable={false}
         destroyOnHidden
       >
-        <Space direction="vertical" style={{ width: "100%" }} size="middle">
-          <div>
-            <Text>用户名</Text>
+        <Form layout="vertical" component="div">
+          <Form.Item
+            label="用户名"
+            htmlFor="create-user-username"
+            validateStatus={errors.username ? "error" : undefined}
+            help={errors.username?.message}
+          >
             <Controller
               name="username"
               control={control}
               render={({ field }) => (
                 <Input
                   {...field}
+                  id="create-user-username"
                   maxLength={100}
                   showCount
                   placeholder="例如 agent-one"
-                  status={errors.username ? "error" : undefined}
                 />
               )}
             />
-            {errors.username && (
-              <Text type="danger" style={{ fontSize: 12 }}>
-                {errors.username.message}
-              </Text>
-            )}
-          </div>
+          </Form.Item>
 
-          <div>
-            <Text>密码</Text>
+          <Form.Item
+            label="密码"
+            htmlFor="create-user-password"
+            validateStatus={errors.password ? "error" : undefined}
+            help={errors.password?.message}
+          >
             <Controller
               name="password"
               control={control}
               render={({ field }) => (
                 <Input.Password
                   {...field}
+                  id="create-user-password"
                   maxLength={72}
                   placeholder="至少 12 个字符"
-                  status={errors.password ? "error" : undefined}
                 />
               )}
             />
-            {errors.password && (
-              <Text type="danger" style={{ fontSize: 12 }}>
-                {errors.password.message}
-              </Text>
-            )}
-          </div>
+          </Form.Item>
 
-          <div>
-            <Text>角色</Text>
+          <Form.Item
+            label="角色"
+            htmlFor="create-user-roles"
+            validateStatus={errors.roles ? "error" : undefined}
+            help={errors.roles?.message}
+          >
             <Controller
               name="roles"
               control={control}
               render={({ field }) => (
                 <Select
                   {...field}
+                  id="create-user-roles"
                   mode="multiple"
                   style={{ width: "100%" }}
                   placeholder="\u9009\u62e9角色"
                   options={ROLE_OPTIONS}
-                  status={errors.roles ? "error" : undefined}
                 />
               )}
             />
-            {errors.roles && (
-              <Text type="danger" style={{ fontSize: 12 }}>
-                {errors.roles.message}
-              </Text>
-            )}
-          </div>
-        </Space>
+          </Form.Item>
+        </Form>
       </Modal>
     </div>
   );

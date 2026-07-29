@@ -75,7 +75,9 @@ describe("UserManagementPage", () => {
 
     const createBtn = screen.getByText("创建用户");
     await userEvent.click(createBtn);
-    expect(screen.getByPlaceholderText("至少 12 个字符")).toBeDefined();
+    expect(screen.getByLabelText("用户名")).toBeDefined();
+    expect(screen.getByLabelText("密码")).toBeDefined();
+    expect(screen.getByLabelText("角色")).toBeDefined();
   });
 
   it("shows validation errors for create user form", async () => {
