@@ -263,14 +263,14 @@ export function AssistantPage() {
             </Paragraph>
             <Space wrap style={{ justifyContent: "center" }}>
               {RECOMMENDED_QUESTIONS.map((q) => (
-                <Tag
+                <Button
                   key={q}
-                  color="blue"
-                  style={{ cursor: "pointer", padding: "4px 12px", fontSize: 13 }}
+                  size="small"
+                  style={{ color: "#1677ff", borderColor: "#91caff" }}
                   onClick={() => handleRecommend(q)}
                 >
                   {q}
-                </Tag>
+                </Button>
               ))}
             </Space>
           </div>
@@ -338,17 +338,18 @@ export function AssistantPage() {
                       </Text>
                       <Space wrap style={{ marginTop: 4 }} size={[4, 4]}>
                         {msg.sources.map((src) => (
-                          <Tag
+                          <Button
                             key={src.articleId}
-                            color="default"
-                            style={{ cursor: "pointer" }}
+                            type="link"
+                            size="small"
+                            icon={<FileTextOutlined />}
+                            style={{ paddingInline: 4 }}
                             onClick={() =>
                               navigate("/knowledge/" + src.articleId)
                             }
                           >
-                            <FileTextOutlined style={{ marginRight: 4 }} />
                             {src.title}
-                          </Tag>
+                          </Button>
                         ))}
                       </Space>
                     </div>
