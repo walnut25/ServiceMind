@@ -7,7 +7,7 @@ from playwright.sync_api import expect
 
 from utils.ui_locators import button, tag
 
-pytestmark = pytest.mark.ui
+pytestmark = [pytest.mark.ui, pytest.mark.regression]
 
 
 class TestCreateTicket:
@@ -45,6 +45,7 @@ class TestTicketDetailAsRequester:
 
 
 class TestTicketWorkflowAsAgent:
+    @pytest.mark.smoke
     def test_agent_moves_ticket_from_open_to_closed(self, authenticated_page, agent_token, ticket):
         page = authenticated_page(agent_token, f"/tickets/{ticket['id']}")
         expect(tag(page, "待处理")).to_be_visible()
@@ -66,20 +67,22 @@ class TestTicketWorkflowAsAgent:
         expect(dialog).to_be_visible()
         dialog.get_by_role("combobox").click()
 
-        # the candidate list is long and virtualised, so choose a rendered option
+        # Candidate labels are ellipsised ("qa_agen...") and the list is virtualised,
+        # so match on the title attribute instead of the rendered text. Locators
+        # auto-wait, which avoids racing the list's first render.
         options = page.locator(".ant-select-dropdown:visible .ant-select-item-option")
         expect(options.first).to_be_visible()
-        labels = [options.nth(index).inner_text() for index in range(options.count())]
-        chosen = next(
-            (label for label in labels if label.startswith(staff_accounts["agent"].username)),
-            labels[0],
+        mine = page.locator(
+            f'.ant-select-dropdown:visible .ant-select-item-option[title^="{staff_accounts["agent"].username}"]'
         )
-        expected_username = chosen.split(" (")[0]
-        options.filter(has_text=chosen).first.click()
+        option = mine.first if mine.count() else options.first
+        label = option.get_attribute("title") or option.inner_text()
+        chosen_username = label.split(" (")[0].strip()
+        option.click()
 
         expect(dialog).to_be_hidden()
         owner = page.locator(".ant-descriptions-item", has_text="负责人")
-        expect(owner.get_by_text(expected_username)).to_be_visible()
+        expect(owner).to_contain_text(chosen_username)
 
     def test_agent_can_comment_on_a_ticket(self, authenticated_page, agent_token, ticket):
         page = authenticated_page(agent_token, f"/tickets/{ticket['id']}")
