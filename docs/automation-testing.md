@@ -36,7 +36,7 @@ tests/
 │   ├── ui_locators.py        # 兼容 antd「登 录」空格问题的定位器
 │   ├── ui_server.py          # 静态站点 + /api 反向代理（替代 nginx/vite）
 │   └── logger.py             # 控制台 + 文件日志（目录不可写时自动降级）
-├── schemas/definitions.py    # 8 个响应 DTO 的 jsonschema
+├── schemas/definitions.py    # 9 个响应 DTO 的 jsonschema
 ├── conftest.py               # 路径注入、fixture 汇总、健康门禁、失败截图
 ├── pytest.ini  requirements.txt  .env.example  README.md
 └── reports/                  # 运行产物（git 忽略）

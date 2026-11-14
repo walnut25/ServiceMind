@@ -9,15 +9,15 @@
 | 分组 | 覆盖点 |
 | --- | --- |
 | 登录成功（4） | 返回 `Bearer` + `accessToken` + `expiresAt`；JWT claims（`iss`/`sub`/`scope`/`exp>iat`）；用户名大小写不敏感且 `sub` 用库中规范大小写；token 可访问受保护端点 |
-| 登录失败（9） | 密码错误 401 且不泄露用户是否存在；不存在用户与密码错误响应一致；禁用账号 401；缺失/空白密码、用户名、空 body 共 5 组参数化 400 |
+| 登录失败（8） | 密码错误 401 且不泄露用户是否存在；不存在用户与密码错误响应一致；禁用账号 401；缺失/空白密码、用户名、空 body 共 5 组参数化 400 |
 | Token 校验（9） | 无 token 401 + 空响应体 + `WWW-Authenticate`；非 JWT 401；篡改签名 401；`Basic` 方案 401；小写 `bearer` 可用；query 参数传 token 被拒；过期 token 401；无 `scope` 时「认证通过但业务 403、actuator 200」；已知风险：合法密钥伪造不存在用户的 token 被接受 |
-| 角色边界（3） | REQUESTER/AGENT 列用户 403 且空体；REQUESTER 读指标 403；ADMIN 列用户 200 且分页信封正确 |
+| 角色边界（4） | REQUESTER/AGENT 列用户 403 且空体；REQUESTER 读指标 403；ADMIN 列用户 200 且分页信封正确 |
 
 ### `api/test_users.py` — 19 条
 
 | 分组 | 覆盖点 |
 | --- | --- |
-| 创建（13） | 201 响应字段；创建后即可登录；用户名唯一（大小写不敏感冲突 409）；用户名 2/101 字符、非法字符、密码 11/73 字符、空角色共 6 组参数化 400；未知角色枚举 400；AGENT/REQUESTER 创建用户 403 |
+| 创建（11） | 201 响应字段；创建后即可登录；用户名唯一（大小写不敏感冲突 409）；用户名 2/101 字符、非法字符、密码 11/73 字符、空角色共 6 组参数化 400；未知角色枚举 400；AGENT/REQUESTER 创建用户 403 |
 | 查询（4） | 按 ID 200；不存在 404；分页 size 生效；`/users/assignees` 只含启用的 ADMIN/AGENT |
 | 账号状态（4） | 禁用后登录 401、重新启用后 200；管理员不能禁用自己（409）；禁用不存在用户 404；缺少 `enabled` 字段 400 |
 
@@ -25,12 +25,12 @@
 
 | 分组 | 覆盖点 |
 | --- | --- |
-| 创建（9） | P1/P2/P3/P4 各自 `dueAt = createdAt + 4h/8h/24h/72h`；`requester` 取自 token（body 中同名字段被忽略）；新单 `ON_TRACK`、`assignee` 为空、`version=0`；AGENT 也可建单；5 组非法载荷 400；200/10000 字符边界 201 |
+| 创建（13） | P1/P2/P3/P4 各自 `dueAt = createdAt + 4h/8h/24h/72h`；`requester` 取自 token（body 中同名字段被忽略）；新单 `ON_TRACK`、`assignee` 为空、`version=0`；AGENT 也可建单；5 组非法载荷 400；200/10000 字符边界 201 |
 | 读取（4） | 详情 200；不存在 404；REQUESTER 读他人工单 404（不泄露存在性）；REQUESTER 列表只含自己的工单 |
-| 过滤（4） | 优先级过滤；状态随流转变化；负责人过滤大小写不敏感；新单不在 `slaBreached=true` 中 |
-| 指标（2） | 字段 schema；`byStatus`/`byPriority` 包含全部枚举键且 `sum(byStatus)=total`、`active=OPEN+IN_PROGRESS` |
-| 状态机（19） | 4 条合法路径参数化；解决设置 `resolvedAt` 且 SLA `MET`；重开清空 `resolvedAt`；8 条非法流转 409 且 `detail` 含 `cannot transition`；REQUESTER 流转 403；不存在工单 404；缺 `status` 400；未知状态值 400 |
-| 指派（11） | 指派成功；首尾空格被 strip；指派 REQUESTER 422；不存在用户 422；**非法 assignee 优先于 404**；合法 assignee + 不存在工单 404；空白 assignee 400；REQUESTER 指派 403 |
+| 过滤（5） | 列表分页信封；优先级过滤；状态随流转变化；负责人过滤大小写不敏感；新单不在 `slaBreached=true` 中 |
+| 指标（1） | 字段 schema；`byStatus`/`byPriority` 包含全部枚举键且 `sum(byStatus)=total`、`active=OPEN+IN_PROGRESS` |
+| 状态机（18） | 4 条合法路径参数化；解决设置 `resolvedAt` 且 SLA `MET`；重开清空 `resolvedAt`；8 条非法流转 409 且 `detail` 含 `cannot transition`；REQUESTER 流转 403；不存在工单 404；缺 `status` 400；未知状态值 400 |
+| 指派（8） | 指派成功；首尾空格被 strip；指派 REQUESTER 422；不存在用户 422；**非法 assignee 优先于 404**；合法 assignee + 不存在工单 404；空白 assignee 400；REQUESTER 指派 403 |
 
 ### `api/test_comments.py` — 12 条
 

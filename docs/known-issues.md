@@ -62,10 +62,11 @@
 
 | 位置 | 文档说法 | 实际 |
 | --- | --- | --- |
-| `README.md` 测试数量 | "42 unit/API tests and 4 MySQL integration tests" | surefire 38 + 4 IT；failsafe 另有 4 |
-| `docs/testing.md` | "adds three Testcontainers tests" 与 "46 tests" 同页矛盾 | 实际 42 个 `@Test` |
-| `TicketController` OpenAPI 注解 | "OPEN -> IN_PROGRESS -> RESOLVED -> CLOSED" | 还允许 `OPEN→CLOSED`、`IN_PROGRESS→CLOSED`、`RESOLVED→IN_PROGRESS` |
+| `docs/testing.md:41` | "adds **three** Testcontainers tests" | 实际 4 个（同页第 43 行的 "4 MySQL tests / 46 tests" 才是对的） |
+| `docs/testing.md:42` | 集成测试验证 "persistence, role storage, optimistic locking, and full-text search" | `MySqlRepositoryIT` 的 4 个用例里没有乐观锁验证 |
+| `TicketController` OpenAPI 注解 | "Allowed workflow: OPEN -> IN_PROGRESS -> RESOLVED -> CLOSED" | 还允许 `OPEN→CLOSED`、`IN_PROGRESS→CLOSED`、`RESOLVED→IN_PROGRESS`（`docs/architecture.md` 的图是对的） |
 | `README.md` 乐观锁描述 | "optimistic locking" 防丢更新 | 见 B2，HTTP 层没有版本条件更新 |
+| `.env.example` / `compose.yaml` | 声称可配置端口、凭据、AI 供应商 | 未透传代码已支持的 `JWT_ACCESS_TOKEN_TTL`、`AI_TIMEOUT`、`AI_MAX_CONTEXT_ARTICLES`（`tests/.env.example` 已补齐这三项） |
 
 ## C. 建议（不阻塞本次交付）
 
