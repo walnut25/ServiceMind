@@ -73,7 +73,23 @@
 | `README.md` 乐观锁描述 | "optimistic locking" 防丢更新 | 见 B2，HTTP 层没有版本条件更新 |
 | `.env.example` / `compose.yaml` | 暗示端口、凭据与 AI 供应商可配置 | `JWT_ACCESS_TOKEN_TTL`、`AI_TIMEOUT`、`AI_MAX_CONTEXT_ARTICLES` 代码已支持但未透传（`tests/.env.example` 已记录三项） |
 
-## C. 建议
+## C. 本轮质量改进中已修复
+
+这次对测试框架本身的审查共发现五个缺陷。记录在这里是因为它们是真实存在的，并非业务缺陷；目前
+全部修复，并由 `tests/unit` 覆盖。
+
+| 缺陷 | 影响 | 修复 |
+| --- | --- | --- |
+| `ApiClient.with_token()` 把 `Authorization` 写进共享的 `requests.Session`，原客户端读的也是同一个 session | 两个客户端可能互相覆盖 token；无认证请求可能继承别人的 token | token 改为客户端私有并逐请求附加；session 不再保存 `Authorization` |
+| UI 页面被追加到模块级列表后从不移除 | 引用在整轮会话中累积；截图可能抓到其他用例的页面 | fixture 在 teardown 注销页面；截图在 teardown 之前执行，失败时仍能抓到正确页面 |
+| `UI_BROWSER_CHANNEL` 默认 `chrome`，而文档写的是"安装 Chromium 即可" | 按文档操作的新检出让然需要系统 Chrome | 默认改为空值（自带 Chromium）；`chrome`/`msedge` 变成显式选择 |
+| 截图与日志目录固定在仓库内 | 只读检出下失败产物被静默丢弃 | `QA_SCREENSHOT_DIR` 与 `QA_LOG_DIR` 可覆盖位置；无法创建时记录警告并继续 |
+| 后端健康门禁是全局 autouse | 框架单元测试无法脱离后端运行 | 门禁下放到 `tests/api/conftest.py` 与 `tests/ui/conftest.py`，`tests/unit` 独立运行 |
+
+同时修正了两处不一致：内置 UI 静态服务现在遵循 `UI_PORT`（此前随机端口、文档却写 8090），以及新增
+`UI_EXTERNAL_SERVER` 以复用已在运行的前端。
+
+## D. 建议
 
 1. 生产环境强制使用强 `JWT_SECRET`，并增加 `iss`/`aud` 与账号状态校验（可缓解 A1 与 B3）。
 2. 为 `ObjectOptimisticLockingFailureException` 增加 409 映射，或在请求 DTO 中引入 `version`。

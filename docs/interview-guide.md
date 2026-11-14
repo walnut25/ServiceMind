@@ -1,4 +1,4 @@
-﻿# Smart Service 求职讲解稿
+# Smart Service 求职讲解稿
 
 ## 简历项目描述
 
@@ -11,8 +11,9 @@
   知识发布与全文检索，并通过乐观锁保护并发更新。
 - 使用 Flyway、Testcontainers、Docker Compose 和 GitHub Actions 建立交付链路；46 项后端自动化
   测试覆盖领域规则、API 权限及真实 MySQL 行为，另提供可重复的端到端验收脚本。
-- 另建独立 Python 自动化测试工程（pytest + Playwright + Allure，179 条用例），覆盖接口鉴权、
-  工单状态机边界与浏览器主流程，并通过独立 GitHub Actions 工作流与既有构建并行执行。
+- 另建独立 Python 自动化测试工程（pytest + Playwright + Allure），共 276 条用例：97 条框架单元
+  测试验证 ApiClient、配置与数据工厂，179 条业务用例覆盖接口鉴权、工单状态机边界与浏览器主流程，
+  并通过独立 GitHub Actions 工作流与既有构建并行执行。
 
 不要在简历中写“微服务”或“已支撑高并发生产流量”。当前项目是有明确模块边界的模块化单体，
 这是主动设计选择，不是缺陷。
@@ -89,17 +90,18 @@ RAG 链路。语义召回成为实际瓶颈后，再增加分块、embedding、�
 
 ## 自动化测试工程（tests/）
 
-`tests/` 是与 Java 后端并列的独立 Python 工程：152 条黑盒 API 用例 + 27 条 Playwright UI 用例，
-直接对运行中的应用发请求，不 Mock 业务逻辑，也不引用 Java 内部类。细节见
-[自动化测试手册](automation-testing.zh-CN.md)与[用例清单](test-cases.zh-CN.md)。
+`tests/` 是与 Java 后端并列的独立 Python 工程：97 条框架单元测试 + 152 条黑盒 API 用例 +
+27 条 Playwright UI 用例，直接对运行中的应用发请求，不 Mock 业务逻辑，也不引用 Java 内部类。
+细节见[自动化测试手册](automation-testing.zh-CN.md)与[用例清单](test-cases.zh-CN.md)。
 
 ### 60 秒补充讲法
 
 > 原有 42 项单测都集中在领域层和仓储层，没有一条真正走过 HTTP。所以我补的是一层黑盒验证：
 > 用 pytest + requests 打真实接口，用 Playwright 走真实浏览器。关键不是数量，而是把契约钉住——
 > 未认证返回什么、越权是 403 还是 404、状态机哪些流转非法、失败时会不会写审计。数据隔离用
-> 唯一命名 + 每次全新数据库卷，因为后端没有删除接口。报告用 Allure，CI 拆成 API 与 UI 两个
-> 独立 Job，避免 UI 失败掩盖后端结果。
+> 唯一命名 + 每次全新数据库卷，因为后端没有删除接口。另外我给框架本身写了 97 条单元测试，
+> 因为测试代码也会出 bug：ApiClient 一开始把 token 写进共享 Session，两个角色的客户端会互相
+> 覆盖，这种问题只有给框架写测试才抓得住。报告用 Allure，CI 拆成 Unit、API、UI 三个独立 Job。
 
 ### 高频追问与回答（自动化部分）
 
@@ -108,6 +110,14 @@ RAG 链路。语义召回成为实际瓶颈后，再增加分块、embedding、�
 MockMvc 已经存在，但它用 `jwt()` 后处理器直接注入 principal，绕过了签名解析、`scope` 到
 `ROLE_` 的转换和过滤器链——这些恰好是最容易出问题的地方。黑盒测试的价值就在于覆盖这层胶水。
 只有外部依赖（AI 供应商）才需要隔离，而且用的是系统天然的确定性分支，不是 mock 掉业务逻辑。
+
+#### 为什么还要给测试框架写单元测试？
+
+因为框架缺陷会伪装成业务失败。真实例子：最初的 `ApiClient` 把 `Authorization` 写进共享的
+`requests.Session`，`with_token()` 声称"返回一个新客户端"，实际改的是共享 session —— 两个
+角色的客户端会互相覆盖 token。这种问题在业务套件里表现为随机 403，很难定位。现在 token 是
+客户端私有、逐请求附加，`tests/unit` 用假 session 直接断言这条契约，只要有人改回共享 header，
+单元测试立刻失败，不需要起后端。
 
 #### 测试数据怎么保证互不污染？
 

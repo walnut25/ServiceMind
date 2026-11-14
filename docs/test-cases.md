@@ -2,7 +2,50 @@
 
 [English](test-cases.md) | [简体中文](test-cases.zh-CN.md)
 
-**179 tests** in total: 152 API and 27 UI. Names state the intent: `test_<behaviour>_<expectation>`.
+**276 tests** in total: 97 framework unit tests and 179 business tests (152 API + 27 UI). Names state
+the intent: `test_<behaviour>_<expectation>`.
+
+## Framework unit tests (97)
+
+These validate the test framework itself. They need no backend, database or browser and run in a few
+hundred milliseconds, so a mistake in the ApiClient or a fixture is caught before the business suites
+run.
+
+### `unit/test_api_client.py` — 27 tests
+
+| Group | Coverage |
+| --- | --- |
+| Transport defaults (3) | `Accept`/`User-Agent` live on the session; the session never carries `Authorization`; a stale header pre-set on a session is removed |
+| Authentication isolation (10) | Token attached per request; no token sends no header; `with_token()` leaves the original and its token untouched; the derived client shares the transport; `without_auth()` does not affect other clients and keeps the original token; explicit token overrides the default; an explicit empty token clears the header; an explicit `headers=` wins; two clients on one session keep separate tokens |
+| Request wiring and URLs (9) | JSON/params/headers forwarded; default timeout from settings; explicit timeout overrides; `health()` uses a short timeout; `login()` posts credentials as JSON; URL building for api prefix, actuator and absolute URLs (4 cases) |
+| Response handling (4) | Non-2xx returned not raised; invalid JSON yields `None`; `describe()` redacts the token; elapsed time recorded |
+| Settings injection (1) | An injected `Settings` changes base URL and prefix |
+
+### `unit/test_settings.py` — 24 tests
+
+Defaults for the local Compose stack; bundled-Chromium browser default; UI server defaults; computed
+`api_root`/`health_url`; trailing-slash normalisation; string/int overrides; five truthy and four falsy
+boolean spellings; empty boolean falls back; non-numeric integer fails loudly; channel unset/empty/
+explicit; immutability; isolation between instances.
+
+### `unit/test_assertions.py` — 23 tests
+
+`assert_status` integer and iterable forms, failure text containing status and body; `assert_empty_body`;
+`assert_problem` title/detail/type/JSON failures; `assert_page` happy path, missing content, missing page
+fields, size mismatch, out-of-range number, empty result; `assert_fields` subset matching and mismatch
+output; `assert_schema` pass, enum violation and missing required property.
+
+### `unit/test_data_factory.py` — 14 tests
+
+Suffix uniqueness (200 samples) and run-id prefix; username shape/pattern/length and uniqueness;
+password length policy and uniqueness; ticket payload shape/priority/title overrides and uniqueness;
+article payload shape and uniqueness; user payload role forwarding and explicit overrides.
+
+### `unit/test_ui_fixtures.py` — 9 tests
+
+Page registry: track/untrack, idempotent tracking, unknown page removal, no growth across 20 simulated
+tests; screenshots: capture open pages, skip closed pages, numbering for multiple pages, a broken page
+does not mask the failure, capture can be disabled.
 
 ## API (152)
 
@@ -100,8 +143,10 @@ lands on 403; AGENT can open the editor; an unknown route renders the 404 page.
 ## Running a subset
 
 ```bash
+pytest tests/unit -q                       # 97 framework tests
 pytest tests/api/test_auth.py -v           # 25
 pytest tests/api -v                        # 152
 pytest tests/ui -v                         # 27
-pytest tests -q                            # 179
+pytest tests -m smoke -q                   # 8
+pytest tests -q                            # 276
 ```

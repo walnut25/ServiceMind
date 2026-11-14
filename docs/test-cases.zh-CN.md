@@ -2,7 +2,45 @@
 
 [English](test-cases.md) | [简体中文](test-cases.zh-CN.md)
 
-共 **179** 条：API 152 条、UI 27 条。用例名即意图（`test_<行为>_<预期>`）。
+共 **276** 条：97 条框架单元测试 + 179 条业务测试（152 API + 27 UI）。用例名即意图
+（`test_<行为>_<预期>`）。
+
+## 框架单元测试（97）
+
+这些用例验证测试框架自身。它们不需要后端、数据库或浏览器，几百毫秒内跑完，因此 ApiClient 或
+fixture 的错误会先在这里暴露，而不是等到业务套件报出难以理解的错误。
+
+### `unit/test_api_client.py` — 27 条
+
+| 分组 | 覆盖点 |
+| --- | --- |
+| 传输默认值（3） | `Accept`/`User-Agent` 属于 session；session 永不携带 `Authorization`；session 上预置的旧认证头会被清除 |
+| 认证隔离（10） | 每次请求附加 token；无 token 不发送认证头；`with_token()` 不修改原客户端及其 token；派生客户端共享传输；`without_auth()` 不影响其他客户端且保留自身 token；显式 token 覆盖默认值；显式空 token 清除认证头；显式 `headers=` 优先；同一 session 上两个客户端各自持有 token |
+| 请求装配与 URL（9） | JSON/params/headers 正确转发；默认超时取自配置；显式超时覆盖默认；`health()` 使用短超时；`login()` 以 JSON 提交凭据；api 前缀、actuator、绝对地址共 4 组 URL 构造 |
+| 响应处理（4） | 非 2xx 不抛异常而是返回；非法 JSON 返回 `None`；`describe()` 脱敏 token；记录耗时 |
+| 配置注入（1） | 注入的 `Settings` 能改变基址与前缀 |
+
+### `unit/test_settings.py` — 24 条
+
+本地 Compose 默认值；浏览器默认使用自带 Chromium；UI 静态服务默认值；`api_root`/`health_url`
+组合；末尾斜杠归一化；字符串与整数覆盖；5 种真值 + 4 种假值布尔写法；空布尔回落默认；非数字整数
+显式报错；浏览器通道未设置/空值/显式值；不可变；实例之间互不影响。
+
+### `unit/test_assertions.py` — 23 条
+
+`assert_status` 整数与集合两种形式、失败信息含状态码与响应体；`assert_empty_body`；`assert_problem`
+对 title/detail/type/非 JSON 的失败；`assert_page` 正常、缺 content、缺 page 字段、size 不符、页码
+越界、空结果；`assert_fields` 子集匹配与差异输出；`assert_schema` 通过、枚举违规、缺必填字段。
+
+### `unit/test_data_factory.py` — 14 条
+
+后缀唯一性（200 次）与 run_id 前缀；用户名形状/字符集/长度与唯一性；密码长度策略与唯一性；工单
+载荷结构、优先级与标题覆盖、唯一性；文章载荷结构与唯一性；用户载荷角色透传与显式覆盖。
+
+### `unit/test_ui_fixtures.py` — 9 条
+
+页面登记：登记/注销、重复登记幂等、注销未知页面安全、模拟 20 条用例后不增长；截图：采集未关闭页面、
+跳过已关闭页面、多页面编号、单个页面截图异常不影响失败上报、可关闭截图。
 
 ## API（152）
 
@@ -91,8 +129,10 @@ REQUESTER 访问 `/admin/users` 或 `/knowledge/new` 落到 403；AGENT 可打�
 ## 运行子集
 
 ```bash
+pytest tests/unit -q                       # 97 条框架测试
 pytest tests/api/test_auth.py -v           # 25
 pytest tests/api -v                        # 152
 pytest tests/ui -v                         # 27
-pytest tests -q                            # 179
+pytest tests -m smoke -q                   # 8
+pytest tests -q                            # 276
 ```
