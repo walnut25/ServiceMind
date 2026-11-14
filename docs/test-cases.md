@@ -1,5 +1,7 @@
 # Test case catalog
 
+[English](test-cases.md) | [简体中文](test-cases.zh-CN.md)
+
 **179 tests** in total: 152 API and 27 UI. Names state the intent: `test_<behaviour>_<expectation>`.
 
 ## API (152)

@@ -1,5 +1,7 @@
 # Known issues and verification notes
 
+[English](known-issues.md) | [简体中文](known-issues.zh-CN.md)
+
 This file records what building the automation suite proved about the application. It separates
 behaviour that is now pinned by a test from findings that only static review establishes. No
 application code was changed to make a test pass.

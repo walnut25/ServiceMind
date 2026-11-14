@@ -1,4 +1,4 @@
-# Smart Service
+﻿# Smart Service
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
@@ -206,7 +206,7 @@ pytest tests/api --alluredir=allure-results
 ```
 
 这套工程不 Mock 业务逻辑，也不修改应用代码。架构、测试数据、Docker 与 CI 用法见
-[自动化测试手册](docs/automation-testing.zh-CN.md)，每条用例见 [测试用例清单](docs/test-cases.md)。
+[自动化测试手册](docs/automation-testing.zh-CN.md)，每条用例见 [测试用例清单](docs/test-cases.zh-CN.md)。
 
 ## AI 配置
 

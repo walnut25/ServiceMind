@@ -1,4 +1,4 @@
-# Smart Service 求职讲解稿
+﻿# Smart Service 求职讲解稿
 
 ## 简历项目描述
 
@@ -91,7 +91,7 @@ RAG 链路。语义召回成为实际瓶颈后，再增加分块、embedding、�
 
 `tests/` 是与 Java 后端并列的独立 Python 工程：152 条黑盒 API 用例 + 27 条 Playwright UI 用例，
 直接对运行中的应用发请求，不 Mock 业务逻辑，也不引用 Java 内部类。细节见
-[自动化测试手册](automation-testing.zh-CN.md)与[用例清单](test-cases.md)。
+[自动化测试手册](automation-testing.zh-CN.md)与[用例清单](test-cases.zh-CN.md)。
 
 ### 60 秒补充讲法
 
@@ -120,7 +120,7 @@ MockMvc 已经存在，但它用 `jwt()` 后处理器直接注入 principal，�
 四条被用例固定下来：伪造不存在用户的 token 会被接受、时间字段纳秒转微秒会舍入、负责人保留
 调用方大小写、401/403 响应体为空。另外四条只能靠代码审计确认（超时指标与列表口径不一致、
 乐观锁在 HTTP 层不可达会返回 500、禁用不吊销已签发 token、缺少最后管理员保护），以及五处
-文档与实现不一致，全部记在[已知问题](known-issues.md)里，没有为了让用例通过去改业务代码。
+文档与实现不一致，全部记在[已知问题](known-issues.zh-CN.md)里，没有为了让用例通过去改业务代码。
 
 ## 当前边界和下一步
 
