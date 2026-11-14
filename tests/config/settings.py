@@ -25,6 +25,16 @@ def _env(name: str, default: str) -> str:
     return value if value not in (None, "") else default
 
 
+def _env_raw(name: str, default: str) -> str:
+    """Like ``_env``, but an explicitly empty value stays empty.
+
+    ``UI_BROWSER_CHANNEL=""`` must mean "use Playwright's bundled Chromium", so
+    it cannot fall back to the local default the way other settings do.
+    """
+    value = os.getenv(name)
+    return default if value is None else value
+
+
 def _env_int(name: str, default: int) -> int:
     raw = os.getenv(name)
     if raw in (None, ""):
@@ -52,7 +62,7 @@ class Settings:
     ui_headless: bool = field(default_factory=lambda: _env_bool("UI_HEADLESS", True))
     # "chrome"/"msedge" reuses an installed browser (no 150MB download).
     # Leave empty in CI to use Playwright's bundled Chromium.
-    ui_browser_channel: str = field(default_factory=lambda: _env("UI_BROWSER_CHANNEL", "chrome"))
+    ui_browser_channel: str = field(default_factory=lambda: _env_raw("UI_BROWSER_CHANNEL", "chrome"))
     ui_screenshots: bool = field(default_factory=lambda: _env_bool("UI_SCREENSHOTS", True))
     ui_timeout_ms: int = field(default_factory=lambda: _env_int("UI_TIMEOUT_MS", 15000))
 
