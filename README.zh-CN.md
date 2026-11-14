@@ -1,4 +1,4 @@
-# Smart Service
+﻿# Smart Service
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
@@ -192,6 +192,21 @@ powershell -ExecutionPolicy Bypass -File .\scripts\smoke-test.ps1 -MysqlPort 330
 测试层级、预期结果、Swagger 手动检查、可选真实 AI 验证和故障排查，见
 [完整测试手册](docs/testing.zh-CN.md)。简历描述、60 秒介绍、五分钟演示流程和常见设计问题，见
 [求职讲解稿](docs/interview-guide.md)。
+
+### Python 自动化测试工程
+
+`tests/` 是一套独立的 Python 测试工程，通过真实 HTTP 与真实浏览器驱动运行中的应用：179 条用例
+（152 条 API + 27 条 Playwright UI），接入 Allure 报告，并有独立于上方 CI 的 GitHub Actions 工作流。
+
+```bash
+pip install -r tests/requirements.txt
+pytest tests/api -v                       # 接口测试
+pytest tests/ui -v                        # 浏览器测试
+pytest tests/api --alluredir=allure-results
+```
+
+这套工程不 Mock 业务逻辑，也不修改应用代码。架构、测试数据、Docker 与 CI 用法见
+[自动化测试手册](docs/automation-testing.zh-CN.md)，每条用例见 [测试用例清单](docs/test-cases.zh-CN.md)。
 
 ## AI 配置
 

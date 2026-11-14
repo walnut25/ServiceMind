@@ -1,0 +1,51 @@
+# Test-only overlay for the Python automation suite.
+#
+#   docker compose -f compose.yaml -f compose.test.yaml up -d mysql app
+#   docker compose -f compose.yaml -f compose.test.yaml --profile test run --rm pytest
+#
+# The overlay never changes the application images: it pins a deterministic
+# test configuration and adds an opt-in runner container that joins the same
+# network, so tests talk to `mysql` / `app` by service name.
+services:
+  app:
+    environment:
+      AI_CHAT_ENABLED: "false"
+      AI_API_KEY: ""
+      JWT_SECRET: test-only-jwt-secret-at-least-32-bytes-long
+      JWT_ACCESS_TOKEN_TTL: 30m
+      ADMIN_USERNAME: admin
+      ADMIN_PASSWORD: Admin123!
+      LOGGING_LEVEL_DEV_SMARTSERVICE: INFO
+
+  mysql:
+    # a smaller buffer pool keeps CI fast; the schema itself is unchanged
+    command: ["--innodb-buffer-pool-size=256M", "--max-connections=200"]
+
+  pytest:
+    profiles: ["test"]
+    image: python:3.12-slim
+    working_dir: /workspace
+    volumes:
+      - ./tests:/workspace/tests:ro
+      - ./allure-results:/workspace/allure-results
+    environment:
+      API_BASE_URL: http://app:8081
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_USERNAME: smart_service
+      DB_PASSWORD: smart_service
+      DB_NAME: smart_service
+      ADMIN_USERNAME: admin
+      ADMIN_PASSWORD: Admin123!
+      JWT_SECRET: test-only-jwt-secret-at-least-32-bytes-long
+      AI_CHAT_ENABLED: "false"
+      QA_RUN_ID: docker
+    depends_on:
+      app:
+        condition: service_healthy
+    command:
+      - sh
+      - -c
+      - |
+        pip install --no-cache-dir -r tests/requirements.txt &&
+        pytest tests/api -q --alluredir=/workspace/allure-results

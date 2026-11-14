@@ -1,0 +1,172 @@
+"""HTTP client used by every API test.
+
+Design goals:
+- one place that knows the base URL, timeout and auth header;
+- every call is logged with method, path, status and duration;
+- failures keep the request and response payloads so a CI failure is
+  diagnosable without re-running;
+- no implicit retries: a flaky endpoint must show up as a flaky test.
+"""
+
+from __future__ import annotations
+
+import time
+from dataclasses import dataclass
+from typing import Any, Mapping
+
+import requests
+
+from config.settings import Settings, settings as default_settings
+from utils.logger import get_logger, truncate
+
+logger = get_logger("api")
+
+
+@dataclass
+class ApiResponse:
+    """Thin wrapper around ``requests.Response`` with assertion helpers."""
+
+    response: requests.Response
+    method: str
+    url: str
+    elapsed_ms: float
+
+    @property
+    def status(self) -> int:
+        return self.response.status_code
+
+    @property
+    def headers(self) -> Mapping[str, str]:
+        return self.response.headers
+
+    @property
+    def text(self) -> str:
+        return self.response.text
+
+    def json(self) -> Any:
+        try:
+            return self.response.json()
+        except ValueError:
+            return None
+
+    @property
+    def problem_title(self) -> str | None:
+        body = self.json()
+        return body.get("title") if isinstance(body, dict) else None
+
+    @property
+    def problem_detail(self) -> str | None:
+        body = self.json()
+        return body.get("detail") if isinstance(body, dict) else None
+
+    def describe(self) -> str:
+        return (
+            f"{self.method} {self.url} -> {self.status} ({self.elapsed_ms:.0f}ms)\n"
+            f"body: {truncate(self.text)}"
+        )
+
+
+class ApiClient:
+    """Authenticated-by-construction HTTP client."""
+
+    def __init__(
+        self,
+        token: str | None = None,
+        *,
+        settings: Settings = default_settings,
+        session: requests.Session | None = None,
+    ) -> None:
+        self.settings = settings
+        self.token = token
+        self.session = session or requests.Session()
+        self.session.headers.update(
+            {
+                "Accept": "application/json",
+                "User-Agent": "servicemind-automation/1.0",
+            }
+        )
+        if token:
+            self.session.headers["Authorization"] = f"Bearer {token}"
+
+    # -- construction helpers -------------------------------------------------
+    def with_token(self, token: str | None) -> "ApiClient":
+        """Return a new client sharing the transport but using another token."""
+        client = ApiClient(settings=self.settings, session=self.session)
+        client.token = token
+        if token:
+            client.session.headers["Authorization"] = f"Bearer {token}"
+        else:
+            self.session.headers.pop("Authorization", None)
+        return client
+
+    def without_auth(self) -> "ApiClient":
+        return self.with_token(None)
+
+    # -- core request ---------------------------------------------------------
+    def request(
+        self,
+        method: str,
+        path: str,
+        *,
+        json: Any | None = None,
+        params: Mapping[str, Any] | None = None,
+        data: Any | None = None,
+        headers: Mapping[str, str] | None = None,
+        token: str | None = None,
+        timeout: int | None = None,
+    ) -> ApiResponse:
+        url = self._build_url(path)
+        request_headers = dict(headers or {})
+        if token is not None:
+            request_headers["Authorization"] = f"Bearer {token}"
+
+        started = time.perf_counter()
+        response = self.session.request(
+            method=method,
+            url=url,
+            json=json,
+            data=data,
+            params=params,
+            headers=request_headers or None,
+            timeout=timeout or self.settings.request_timeout,
+        )
+        elapsed_ms = (time.perf_counter() - started) * 1000
+        wrapped = ApiResponse(response=response, method=method.upper(), url=url, elapsed_ms=elapsed_ms)
+
+        logger.info("%s %s -> %s (%.0fms)", method.upper(), url, wrapped.status, elapsed_ms)
+        if wrapped.status >= 400:
+            logger.warning("response body: %s", truncate(wrapped.text))
+        return wrapped
+
+    def get(self, path: str, **kwargs: Any) -> ApiResponse:
+        return self.request("GET", path, **kwargs)
+
+    def post(self, path: str, **kwargs: Any) -> ApiResponse:
+        return self.request("POST", path, **kwargs)
+
+    def put(self, path: str, **kwargs: Any) -> ApiResponse:
+        return self.request("PUT", path, **kwargs)
+
+    def patch(self, path: str, **kwargs: Any) -> ApiResponse:
+        return self.request("PATCH", path, **kwargs)
+
+    def delete(self, path: str, **kwargs: Any) -> ApiResponse:
+        return self.request("DELETE", path, **kwargs)
+
+    # -- convenience ----------------------------------------------------------
+    def login(self, username: str, password: str) -> ApiResponse:
+        return self.request(
+            "POST",
+            "/auth/login",
+            json={"username": username, "password": password},
+        )
+
+    def health(self) -> ApiResponse:
+        return self.request("GET", "/actuator/health", timeout=5)
+
+    def _build_url(self, path: str) -> str:
+        if path.startswith("http://") or path.startswith("https://"):
+            return path
+        if path.startswith("/actuator") or path.startswith("/v3"):
+            return self.settings.base_url.rstrip("/") + path
+        return self.settings.api_root + ("" if path.startswith("/") else "/") + path
