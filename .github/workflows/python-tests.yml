@@ -1,4 +1,4 @@
-﻿name: python-automation-tests
+name: python-automation-tests
 
 # Independent workflow: the existing ci.yml (Maven, frontend, container builds)
 # is untouched, so a failing UI job can never hide the backend results.
@@ -30,6 +30,33 @@ env:
   QA_RUN_ID: ci${{ github.run_id }}
 
 jobs:
+  python-unit-test:
+    name: Framework unit tests (pytest)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: tests/requirements.txt
+
+      - name: Install test dependencies
+        run: pip install -r tests/requirements.txt
+
+      - name: Run framework unit tests
+        run: pytest tests/unit -q --alluredir=allure-results-unit
+
+      - name: Upload Allure results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results-unit
+          path: allure-results-unit/
+          retention-days: 7
+
   python-api-test:
     name: API automation (pytest)
     runs-on: ubuntu-latest

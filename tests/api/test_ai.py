@@ -1,4 +1,4 @@
-"""AI assistant: grounding, validation and the deterministic "not configured" path.
+﻿"""AI assistant: grounding, validation and the deterministic "not configured" path.
 
 No real model is called: either the question matches nothing (200, ungrounded,
 no provider call) or it matches a published article while AI is disabled (503).
@@ -14,7 +14,7 @@ from schemas.definitions import AI_ANSWER_SCHEMA
 from utils.assertions import assert_problem, assert_schema, assert_status
 from utils.data_factory import unique_suffix
 
-pytestmark = pytest.mark.api
+pytestmark = [pytest.mark.api, pytest.mark.regression]
 
 
 def _publish_article_about(agent_client, token: str) -> dict:

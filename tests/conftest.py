@@ -88,9 +88,13 @@ def _wait_for_backend() -> None:
     )
 
 
-@pytest.fixture(scope="session", autouse=True)
-def backend_available() -> None:
-    """Fail once, clearly, instead of producing 60 confusing connection errors."""
+@pytest.fixture(scope="session")
+def backend_health() -> None:
+    """Fail once, clearly, instead of producing 60 confusing connection errors.
+
+    Not autouse: framework unit tests under ``tests/unit`` must run without a
+    backend, so only the ``api`` and ``ui`` packages opt in (see their conftest).
+    """
     _wait_for_backend()
 
 

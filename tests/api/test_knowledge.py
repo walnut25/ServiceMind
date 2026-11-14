@@ -1,4 +1,4 @@
-"""Knowledge base: article lifecycle, visibility rules and full-text search."""
+﻿"""Knowledge base: article lifecycle, visibility rules and full-text search."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from schemas.definitions import ARTICLE_SCHEMA, page_of
 from utils.assertions import assert_page, assert_problem, assert_schema, assert_status
 from utils.data_factory import article_payload, unique_suffix
 
-pytestmark = pytest.mark.api
+pytestmark = [pytest.mark.api, pytest.mark.regression]
 
 
 def _ts(value: str) -> float:

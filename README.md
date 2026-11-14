@@ -200,11 +200,13 @@ five-minute demo flow, and answers to common design questions.
 ### Python automation suite
 
 `tests/` contains a standalone Python suite that drives the running application over HTTP and a real
-browser: 179 tests (152 API + 27 Playwright UI), Allure reporting, and its own GitHub Actions
-workflow that runs in parallel with the CI above.
+browser: 276 tests in total — 97 framework unit tests plus 179 business tests (152 API + 27 Playwright
+UI) — with Allure reporting and its own GitHub Actions workflow that runs in parallel with the CI above.
 
 ```bash
 pip install -r tests/requirements.txt
+python -m playwright install chromium     # browser for the UI tests
+pytest tests/unit -q                      # framework tests, no backend needed
 pytest tests/api -v                       # API tests
 pytest tests/ui -v                        # browser tests
 pytest tests/api --alluredir=allure-results

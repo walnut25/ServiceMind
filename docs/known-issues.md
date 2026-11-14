@@ -86,7 +86,24 @@ application code was changed to make a test pass.
 | `README.md` optimistic locking | "optimistic locking" prevents lost updates | See B2: no version-conditional update over HTTP |
 | `.env.example` / `compose.yaml` | implies ports, credentials and the AI provider are configurable | `JWT_ACCESS_TOKEN_TTL`, `AI_TIMEOUT` and `AI_MAX_CONTEXT_ARTICLES` are supported by the code but never passed through (`tests/.env.example` documents all three) |
 
-## C. Recommendations
+## C. Resolved during the quality pass
+
+The review of the automation framework itself found five defects. They are listed here because they
+were real, not because they were business bugs; all are fixed and covered by `tests/unit`.
+
+| Defect | Impact | Fix |
+| --- | --- | --- |
+| `ApiClient.with_token()` wrote `Authorization` into the shared `requests.Session` and the original client read that same session | Two clients could overwrite each other's token; an unauthenticated request could inherit a token | The token is now per client and applied per request; the session no longer carries `Authorization` |
+| UI pages were appended to a module-level list and never removed | References accumulated for the whole session; screenshots could pick up pages from other tests | Fixtures untrack their pages on teardown; screenshots run before teardown, so failures still capture the right page |
+| `UI_BROWSER_CHANNEL` defaulted to `chrome` while the docs said "install Chromium" | A fresh checkout following the docs still required a system Chrome | The default is now empty (bundled Chromium); `chrome`/`msedge` are explicit opt-ins |
+| Screenshot and log directories were fixed under the checkout | On a read-only checkout the failure artifacts were silently lost | `QA_SCREENSHOT_DIR` and `QA_LOG_DIR` override the locations; the suite logs a warning and continues |
+| The backend health gate was session-autouse for every test | Framework unit tests could not run without a backend | The gate moved into `tests/api/conftest.py` and `tests/ui/conftest.py`; `tests/unit` runs standalone |
+
+Two further inconsistencies were corrected at the same time: the built-in UI server now honours
+`UI_PORT` instead of binding an arbitrary port while the docs claimed `8090`, and the suite can point
+at an already-running frontend through `UI_EXTERNAL_SERVER`.
+
+## D. Recommendations
 
 1. Require a strong `JWT_SECRET` in production and add `iss`/`aud` and account-state validation
    (mitigates A1 and B3).

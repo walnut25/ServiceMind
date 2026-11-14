@@ -1,4 +1,4 @@
-"""User administration API: creation rules, duplicate handling, account state."""
+﻿"""User administration API: creation rules, duplicate handling, account state."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ import pytest
 from utils.assertions import assert_page, assert_problem, assert_status
 from utils.data_factory import unique_password, unique_username
 
-pytestmark = pytest.mark.api
+pytestmark = [pytest.mark.api, pytest.mark.regression]
 
 
 class TestCreateUser:

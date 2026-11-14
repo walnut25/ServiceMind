@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import pytest
+import requests
 
 from config.settings import TESTS_ROOT, settings
 from utils.logger import get_logger
@@ -13,12 +15,31 @@ from utils.ui_server import StaticAppServer
 
 logger = get_logger("fixtures.ui")
 
-SCREENSHOT_DIR = Path(TESTS_ROOT) / "reports" / "screenshots"
+# QA_SCREENSHOT_DIR keeps failure artifacts writable on a read-only checkout.
+SCREENSHOT_DIR = Path(os.getenv("QA_SCREENSHOT_DIR") or (TESTS_ROOT / "reports" / "screenshots"))
+
+# Pages that belong to the currently running test. Entries are registered when a
+# page is created and dropped by that test's teardown, so the list never grows
+# across the session. The failure hook runs before teardown, which is why the
+# screenshot still sees the page it needs.
 _ACTIVE_PAGES: list = []
 
 
 def track(page) -> None:
-    _ACTIVE_PAGES.append(page)
+    if page not in _ACTIVE_PAGES:
+        _ACTIVE_PAGES.append(page)
+
+
+def untrack(page) -> None:
+    try:
+        _ACTIVE_PAGES.remove(page)
+    except ValueError:
+        pass
+
+
+def active_page_count() -> int:
+    """Exposed for the framework unit tests."""
+    return len(_ACTIVE_PAGES)
 
 
 def screenshot_active_pages(test_name: str) -> None:
@@ -48,7 +69,31 @@ def token_init_script(token: str) -> str:
 
 @pytest.fixture(scope="session")
 def ui_server() -> str:
-    server = StaticAppServer(settings.frontend_dist, settings.base_url).start()
+    """Base URL for the browser tests.
+
+    By default a small static server serves ``frontend/dist`` and proxies
+    ``/api`` to the backend. ``UI_EXTERNAL_SERVER=true`` skips it and uses
+    ``UI_BASE_URL`` instead, e.g. the nginx container.
+    """
+    if settings.ui_external_server:
+        url = settings.ui_base_url.rstrip("/")
+        try:
+            response = requests.get(url, timeout=5)
+        except requests.RequestException as exc:
+            pytest.exit(f"UI_EXTERNAL_SERVER is enabled but {url} is unreachable: {exc}", returncode=3)
+        if response.status_code >= 400:
+            pytest.exit(f"UI_EXTERNAL_SERVER is enabled but {url} answered {response.status_code}", returncode=3)
+        logger.info("using external UI server at %s", url)
+        yield url
+        return
+
+    server = StaticAppServer(settings.frontend_dist, settings.base_url, port=settings.ui_port)
+    try:
+        server.start()
+    except OSError as exc:
+        logger.warning("port %s unavailable (%s); using an ephemeral port", settings.ui_port, exc)
+        server = StaticAppServer(settings.frontend_dist, settings.base_url, port=0).start()
+
     logger.info("serving %s on %s", settings.frontend_dist, server.url)
     yield server.url
     server.stop()
@@ -61,9 +106,18 @@ def browser():
     options: dict = {"headless": settings.ui_headless}
     if settings.ui_browser_channel:
         options["channel"] = settings.ui_browser_channel
+    label = settings.ui_browser_channel or "bundled Chromium"
 
     with sync_playwright() as playwright:
-        browser = playwright.chromium.launch(**options)
+        try:
+            browser = playwright.chromium.launch(**options)
+        except Exception as exc:  # pragma: no cover - environment dependent
+            pytest.exit(
+                f"cannot launch {label}: {exc}\n"
+                "Install the bundled browser with 'python -m playwright install chromium', "
+                "or set UI_BROWSER_CHANNEL=chrome to reuse an installed Chrome.",
+                returncode=3,
+            )
         yield browser
         browser.close()
 
@@ -95,7 +149,10 @@ def ui_page(ui_context):
     context = ui_context()
     page = context.new_page()
     track(page)
-    yield page
+    try:
+        yield page
+    finally:
+        untrack(page)
 
 
 @pytest.fixture
@@ -107,11 +164,13 @@ def authenticated_page(ui_context):
         context = ui_context(token)
         page = context.new_page()
         track(page)
-        page.goto(path)
         pages.append(page)
+        page.goto(path)
         return page
 
     yield factory
+    for page in pages:
+        untrack(page)
 
 
 def ui_login(page, username: str, password: str) -> None:

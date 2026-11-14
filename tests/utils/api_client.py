@@ -6,12 +6,20 @@ Design goals:
 - failures keep the request and response payloads so a CI failure is
   diagnosable without re-running;
 - no implicit retries: a flaky endpoint must show up as a flaky test.
+
+Authentication isolation
+------------------------
+A client may share its ``requests.Session`` (connection pool, transport
+configuration) with other clients, but the token is *per client* and is applied
+to every request individually. The session never carries an ``Authorization``
+header, so ``with_token()`` and ``without_auth()`` cannot leak credentials into
+each other or into a concurrently running test.
 """
 
 from __future__ import annotations
 
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Mapping
 
 import requests
@@ -20,6 +28,11 @@ from config.settings import Settings, settings as default_settings
 from utils.logger import get_logger, truncate
 
 logger = get_logger("api")
+
+DEFAULT_HEADERS = {
+    "Accept": "application/json",
+    "User-Agent": "servicemind-automation/1.0",
+}
 
 
 @dataclass
@@ -30,6 +43,7 @@ class ApiResponse:
     method: str
     url: str
     elapsed_ms: float
+    request_headers: Mapping[str, str] = field(default_factory=dict)
 
     @property
     def status(self) -> int:
@@ -60,14 +74,20 @@ class ApiResponse:
         return body.get("detail") if isinstance(body, dict) else None
 
     def describe(self) -> str:
+        # Auth headers are redacted: failure dumps end up in CI logs.
+        headers = {
+            key: ("Bearer ***" if key.lower() == "authorization" else value)
+            for key, value in self.request_headers.items()
+        }
         return (
             f"{self.method} {self.url} -> {self.status} ({self.elapsed_ms:.0f}ms)\n"
+            f"request headers: {headers}\n"
             f"body: {truncate(self.text)}"
         )
 
 
 class ApiClient:
-    """Authenticated-by-construction HTTP client."""
+    """HTTP client whose authentication state is per instance, never per session."""
 
     def __init__(
         self,
@@ -77,29 +97,29 @@ class ApiClient:
         session: requests.Session | None = None,
     ) -> None:
         self.settings = settings
-        self.token = token
         self.session = session or requests.Session()
-        self.session.headers.update(
-            {
-                "Accept": "application/json",
-                "User-Agent": "servicemind-automation/1.0",
-            }
-        )
-        if token:
-            self.session.headers["Authorization"] = f"Bearer {token}"
+        self._token = token
 
-    # -- construction helpers -------------------------------------------------
+        # Transport defaults belong to the session; credentials never do.
+        for name, value in DEFAULT_HEADERS.items():
+            self.session.headers.setdefault(name, value)
+        self.session.headers.pop("Authorization", None)
+
+    # -- authentication state -------------------------------------------------
+    @property
+    def token(self) -> str | None:
+        """The token used when a request does not pass one explicitly."""
+        return self._token
+
     def with_token(self, token: str | None) -> "ApiClient":
-        """Return a new client sharing the transport but using another token."""
-        client = ApiClient(settings=self.settings, session=self.session)
-        client.token = token
-        if token:
-            client.session.headers["Authorization"] = f"Bearer {token}"
-        else:
-            self.session.headers.pop("Authorization", None)
-        return client
+        """Return a new client on the same transport with its own token.
+
+        The original client keeps its token and the shared session is untouched.
+        """
+        return ApiClient(token, settings=self.settings, session=self.session)
 
     def without_auth(self) -> "ApiClient":
+        """Return an unauthenticated client; other clients are unaffected."""
         return self.with_token(None)
 
     # -- core request ---------------------------------------------------------
@@ -116,9 +136,10 @@ class ApiClient:
         timeout: int | None = None,
     ) -> ApiResponse:
         url = self._build_url(path)
-        request_headers = dict(headers or {})
-        if token is not None:
-            request_headers["Authorization"] = f"Bearer {token}"
+        request_headers = self._headers_for(token)
+        if headers:
+            # Explicit headers win, e.g. a lowercase "bearer" scheme in a test.
+            request_headers.update(headers)
 
         started = time.perf_counter()
         response = self.session.request(
@@ -127,16 +148,28 @@ class ApiClient:
             json=json,
             data=data,
             params=params,
-            headers=request_headers or None,
-            timeout=timeout or self.settings.request_timeout,
+            headers=request_headers,
+            timeout=timeout if timeout is not None else self.settings.request_timeout,
         )
         elapsed_ms = (time.perf_counter() - started) * 1000
-        wrapped = ApiResponse(response=response, method=method.upper(), url=url, elapsed_ms=elapsed_ms)
+        wrapped = ApiResponse(
+            response=response,
+            method=method.upper(),
+            url=url,
+            elapsed_ms=elapsed_ms,
+            request_headers=request_headers,
+        )
 
         logger.info("%s %s -> %s (%.0fms)", method.upper(), url, wrapped.status, elapsed_ms)
         if wrapped.status >= 400:
             logger.warning("response body: %s", truncate(wrapped.text))
         return wrapped
+
+    def _headers_for(self, token: str | None) -> dict[str, str]:
+        effective = self._token if token is None else token
+        if not effective:
+            return {}
+        return {"Authorization": f"Bearer {effective}"}
 
     def get(self, path: str, **kwargs: Any) -> ApiResponse:
         return self.request("GET", path, **kwargs)
