@@ -1,0 +1,19 @@
+# Core API automation
+pytest>=8.0
+requests>=2.32
+jsonschema>=4.22
+python-dotenv>=1.0
+pytest-mock>=3.14
+
+# Parallel execution (enable once test isolation is proven)
+pytest-xdist>=3.6
+
+# Database-assisted assertions
+PyMySQL>=1.1
+cryptography>=42  # required by PyMySQL for MySQL 8 caching_sha2_password
+
+# UI automation
+playwright>=1.48
+
+# Reporting
+allure-pytest>=2.13

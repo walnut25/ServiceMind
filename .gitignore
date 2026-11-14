@@ -8,3 +8,16 @@ data/
 *.log
 
 .npm-cache/
+
+# Python automation tests
+tests/reports/
+tests/.env
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+
+# Allure output
+allure-results/
+allure-report/
+tests/reports/

@@ -197,6 +197,23 @@ checks, optional live-AI verification, and troubleshooting. The
 [interview guide](docs/interview-guide.md) contains resume bullets, a 60-second introduction, a
 five-minute demo flow, and answers to common design questions.
 
+### Python automation suite
+
+An independent black-box suite lives in [`tests/`](tests/README.md): **179 pytest cases**
+(152 API + 27 Playwright UI) that drive the running application over HTTP and a real browser, with
+Allure reporting and its own GitHub Actions workflow.
+
+```bash
+pip install -r tests/requirements.txt
+pytest tests/api -v                       # API tests
+pytest tests/ui -v                        # browser tests
+pytest tests/api --alluredir=tests/reports/allure-results
+```
+
+The suite requires no changes to the application code and never mocks business logic. See
+[docs/automation-testing.md](docs/automation-testing.md) for the architecture, test-data strategy,
+Docker usage, CI setup, and [docs/test-cases.md](docs/test-cases.md) for the full case catalog.
+
 ## AI configuration
 
 The AI assistant is disabled until credentials are supplied. It uses an OpenAI-compatible chat API and
