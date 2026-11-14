@@ -199,20 +199,20 @@ five-minute demo flow, and answers to common design questions.
 
 ### Python automation suite
 
-An independent black-box suite lives in [`tests/`](tests/README.md): **179 pytest cases**
-(152 API + 27 Playwright UI) that drive the running application over HTTP and a real browser, with
-Allure reporting and its own GitHub Actions workflow.
+`tests/` contains a standalone Python suite that drives the running application over HTTP and a real
+browser: 179 tests (152 API + 27 Playwright UI), Allure reporting, and its own GitHub Actions
+workflow that runs in parallel with the CI above.
 
 ```bash
 pip install -r tests/requirements.txt
 pytest tests/api -v                       # API tests
 pytest tests/ui -v                        # browser tests
-pytest tests/api --alluredir=tests/reports/allure-results
+pytest tests/api --alluredir=allure-results
 ```
 
-The suite requires no changes to the application code and never mocks business logic. See
-[docs/automation-testing.md](docs/automation-testing.md) for the architecture, test-data strategy,
-Docker usage, CI setup, and [docs/test-cases.md](docs/test-cases.md) for the full case catalog.
+The suite never mocks business logic and does not modify application code. See the
+[automation guide](docs/automation-testing.md) for the architecture, test data, Docker and CI setup,
+and the [test case catalog](docs/test-cases.md) for every case.
 
 ## AI configuration
 

@@ -1,65 +1,70 @@
 # ServiceMind Python automation suite
 
-与 Java `src/main`、`src/test` 并列的**独立 Python 测试工程**：黑盒 HTTP API 测试 + Playwright UI 测试，
-直接对真实运行的后端与 MySQL 执行，不 Mock 业务逻辑，不修改应用代码。
+A standalone Python project that sits next to the Java `src/main` and `src/test` trees. It drives the
+running application over HTTP and a real browser, never mocks business logic, and never modifies
+application code.
 
-- **179 条用例**：API 152 + UI 27
-- **三种运行方式**：本地 pytest / Docker Compose / GitHub Actions
-- **报告**：Allure（成功率、耗时、步骤、失败堆栈、UI 失败截图）
+- **179 tests**: 152 API + 27 UI
+- **Three ways to run**: pytest locally, Docker Compose, GitHub Actions
+- **Reporting**: Allure (totals, duration, steps, failure stack traces, UI screenshots)
 
-## 快速开始
+## Quick start
 
 ```bash
-# 1) 后端 + 数据库
-docker compose up -d mysql app          # 或已有 MySQL 时直接 java -jar
+# 1) Backend and database
+docker compose up -d mysql app          # or `java -jar target/smart-service-*.jar`
 
-# 2) Python 环境（3.12 推荐，3.11+ 均可）
+# 2) Python environment (3.12 recommended, 3.11+ works)
 python -m venv .venv
-.venv\Scripts\activate                   # Windows
+.venv\Scripts\Activate.ps1               # Windows
 pip install -r tests/requirements.txt
 
-# 3) 配置（可选，默认值已能连本地 Compose）
+# 3) Configuration (optional; defaults target the local Compose stack)
 copy tests\.env.example tests\.env
 
-# 4) 运行
-pytest tests/api -v                      # 152 条接口用例
-pytest tests/ui -v                       # 27 条浏览器用例（需先构建 frontend）
-pytest tests -q                          # 全部 179 条
+# 4) Run
+pytest tests/api -v                      # 152 API tests
+pytest tests/ui -v                       # 27 browser tests (build frontend first)
+pytest tests -q                          # all 179
 ```
 
-UI 测试需要前端构建产物：
+The UI tests need a built frontend:
 
 ```bash
 cd frontend && npm ci && npm run build && cd ..
 ```
 
-## 目录
+## Layout
 
-```
+```text
 tests/
-├── config/settings.py      # 唯一配置入口（env / .env）
-├── api/                    # 152 条黑盒接口用例，按业务域拆分
-├── ui/                     # 27 条 Playwright 用例
-├── fixtures/               # 认证、用户、工单/文章、浏览器与 SPA 服务
-├── utils/                  # api_client / assertions / jwt / db / logger / locators / ui_server
-├── schemas/                # 响应 jsonschema
-├── reports/                # 运行产物（git 忽略）
-├── conftest.py             # 路径注入、fixture 汇总、健康门禁、失败截图
+├── config/settings.py      # single configuration entry point (env or .env)
+├── api/                    # 152 black-box HTTP tests, one file per business area
+├── ui/                     # 27 Playwright tests
+├── fixtures/               # authentication, users, tickets/articles, browser and SPA server
+├── utils/                  # API client, assertions, JWT, database, logger, locators, static server
+├── schemas/                # response JSON schemas
+├── reports/                # run artifacts (git ignored)
+├── conftest.py             # path setup, fixture registry, health gate, failure screenshots
 ├── pytest.ini  requirements.txt  .env.example
 ```
 
-## 约定
+## Conventions
 
-- **数据隔离**：后端没有删除接口，所有对象用 `qa_<run_id>_<时间>_<序号>_<随机>` 命名，只操作本次创建的数据；
-  CI 每次使用全新数据库卷。
-- **断言粒度**：状态码 + RFC 9457 `title/detail` + 业务字段 + jsonschema，不止断言 200。
-  Spring Security 的 401/403 响应体为空，用 `assert_empty_body` 显式验证。
-- **不 Mock**：AI 走天然的「无命中 200」与「未配置 503」两条确定性路径，不消耗真实模型额度。
-- **可诊断**：断言失败自带响应体；UI 失败自动截图；日志同时写控制台与 `reports/logs/`（目录不可写时自动降级）。
+- **Test data**: the API has no delete endpoints, so every object is named
+  `qa_<run_id>_<time>_<counter>_<random>` and tests only touch what they created. CI uses a fresh
+  database volume per run.
+- **Assertion depth**: status code + RFC 9457 `title`/`detail` + business fields + JSON schema. A bare
+  200 never passes. Spring Security's 401/403 responses carry no body, which `assert_empty_body`
+  verifies explicitly.
+- **No mocking**: the AI module is exercised through its two deterministic branches (unmatched → 200
+  ungrounded, matched but unconfigured → 503), so no real model quota is consumed.
+- **Diagnosability**: assertion failures embed the response body; UI failures capture a screenshot;
+  logs go to the console and `reports/logs/` (falling back to console-only on a read-only checkout).
 
-## 文档
+## Documentation
 
-- [自动化测试说明](../docs/automation-testing.md)：架构、数据策略、Docker、Allure、CI、排错
-- [测试用例清单](../docs/test-cases.md)：179 条用例的分组清单
-- [已知问题](../docs/known-issues.md)：测试发现的行为问题与文档不一致
-- [项目介绍（求职版）](../docs/portfolio.md)
+- [Automation guide](../docs/automation-testing.md): architecture, data strategy, Docker, Allure, CI, troubleshooting
+- [Test case catalog](../docs/test-cases.md): all 179 cases grouped by module
+- [Known issues](../docs/known-issues.md): behaviour proven by tests and mismatches found in the docs
+- [Interview guide](../docs/interview-guide.md): how to present the project

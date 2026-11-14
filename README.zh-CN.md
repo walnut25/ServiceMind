@@ -195,19 +195,18 @@ powershell -ExecutionPolicy Bypass -File .\scripts\smoke-test.ps1 -MysqlPort 330
 
 ### Python 自动化测试工程
 
-独立的黑盒测试套件位于 [`tests/`](tests/README.md)，共 **179 条 pytest 用例**（152 条 API + 27 条
-Playwright UI），通过真实 HTTP 与浏览器驱动运行中的应用，并接入 Allure 报告与独立的 GitHub Actions
-工作流。
+`tests/` 是一套独立的 Python 测试工程，通过真实 HTTP 与真实浏览器驱动运行中的应用：179 条用例
+（152 条 API + 27 条 Playwright UI），接入 Allure 报告，并有独立于上方 CI 的 GitHub Actions 工作流。
 
 ```bash
 pip install -r tests/requirements.txt
 pytest tests/api -v                       # 接口测试
 pytest tests/ui -v                        # 浏览器测试
-pytest tests/api --alluredir=tests/reports/allure-results
+pytest tests/api --alluredir=allure-results
 ```
 
-整套工程**不修改业务代码、不 Mock 业务逻辑**。架构、测试数据策略、Docker 用法与 CI 配置见
-[自动化测试说明](docs/automation-testing.md)，完整用例清单见 [测试用例清单](docs/test-cases.md)。
+这套工程不 Mock 业务逻辑，也不修改应用代码。架构、测试数据、Docker 与 CI 用法见
+[自动化测试手册](docs/automation-testing.zh-CN.md)，每条用例见 [测试用例清单](docs/test-cases.md)。
 
 ## AI 配置
 

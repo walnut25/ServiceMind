@@ -1,4 +1,4 @@
-name: python-automation-tests
+﻿name: python-automation-tests
 
 # Independent workflow: the existing ci.yml (Maven, frontend, container builds)
 # is untouched, so a failing UI job can never hide the backend results.
@@ -30,7 +30,7 @@ env:
   QA_RUN_ID: ci${{ github.run_id }}
 
 jobs:
-  api-tests:
+  python-api-test:
     name: API automation (pytest)
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -98,7 +98,7 @@ jobs:
         if: always()
         run: docker compose down -v
 
-  ui-tests:
+  python-ui-test:
     name: UI automation (Playwright)
     runs-on: ubuntu-latest
     timeout-minutes: 30
