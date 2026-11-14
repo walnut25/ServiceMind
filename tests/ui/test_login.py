@@ -8,10 +8,11 @@ from playwright.sync_api import expect
 from fixtures.ui_fixtures import ui_login
 from utils.ui_locators import button, menuitem
 
-pytestmark = pytest.mark.ui
+pytestmark = [pytest.mark.ui, pytest.mark.regression]
 
 
 class TestLoginPage:
+    @pytest.mark.smoke
     def test_valid_credentials_land_on_the_dashboard(self, ui_page, admin_user):
         ui_login(ui_page, admin_user.username, admin_user.password)
 

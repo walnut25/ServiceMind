@@ -1,4 +1,4 @@
-"""AI assistant UI: grounded/unavailable states without calling a real model."""
+﻿"""AI assistant UI: grounded/unavailable states without calling a real model."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from config.settings import settings
 from utils.data_factory import unique_suffix
 from utils.ui_locators import button
 
-pytestmark = pytest.mark.ui
+pytestmark = [pytest.mark.ui, pytest.mark.regression]
 
 
 def _ask(page, question: str) -> None:

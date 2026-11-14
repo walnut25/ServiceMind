@@ -1,4 +1,4 @@
-"""Knowledge base UI: authoring an article and searching it as a requester."""
+﻿"""Knowledge base UI: authoring an article and searching it as a requester."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from playwright.sync_api import expect
 from utils.data_factory import unique_suffix
 from utils.ui_locators import button
 
-pytestmark = pytest.mark.ui
+pytestmark = [pytest.mark.ui, pytest.mark.regression]
 
 
 class TestArticleAuthoring:

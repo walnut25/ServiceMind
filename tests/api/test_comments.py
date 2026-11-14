@@ -1,4 +1,4 @@
-"""Ticket comments: authorship, ordering, validation and visibility rules."""
+﻿"""Ticket comments: authorship, ordering, validation and visibility rules."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ import pytest
 
 from utils.assertions import assert_page, assert_problem, assert_status
 
-pytestmark = pytest.mark.api
+pytestmark = [pytest.mark.api, pytest.mark.regression]
 
 
 class TestAddComment:

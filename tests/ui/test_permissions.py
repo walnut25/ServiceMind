@@ -1,4 +1,4 @@
-"""Role-based navigation and route guards, verified in the browser."""
+﻿"""Role-based navigation and route guards, verified in the browser."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from playwright.sync_api import expect
 
 from utils.ui_locators import button, menuitem
 
-pytestmark = pytest.mark.ui
+pytestmark = [pytest.mark.ui, pytest.mark.regression]
 
 
 class TestNavigationByRole:

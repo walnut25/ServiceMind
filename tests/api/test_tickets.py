@@ -10,7 +10,7 @@ from utils.assertions import assert_page, assert_problem, assert_schema, assert_
 from utils.data_factory import ticket_payload
 from schemas.definitions import METRICS_SCHEMA, TICKET_SCHEMA, page_of
 
-pytestmark = pytest.mark.api
+pytestmark = [pytest.mark.api, pytest.mark.regression]
 
 SLA_HOURS = {"P1": 4, "P2": 8, "P3": 24, "P4": 72}
 
@@ -42,6 +42,7 @@ class TestCreateTicket:
         delta = _parse(body["dueAt"]) - _parse(body["createdAt"])
         assert delta == timedelta(hours=hours), f"expected a {hours}h SLA, got {delta}"
 
+    @pytest.mark.smoke
     def test_requester_is_taken_from_the_token_not_the_body(self, requester_client, requester_factory):
         user, client = requester_factory()
 
@@ -190,6 +191,7 @@ class TestMetrics:
 
 
 class TestStateMachine:
+    @pytest.mark.smoke
     @pytest.mark.parametrize(
         ("path", "expected"),
         [

@@ -14,7 +14,7 @@ from utils.assertions import assert_empty_body, assert_page, assert_problem, ass
 from utils.data_factory import unique_password, unique_username
 from utils.jwt_utils import build_token, decode_payload, tamper_signature
 
-pytestmark = pytest.mark.api
+pytestmark = [pytest.mark.api, pytest.mark.regression]
 
 requires_secret = pytest.mark.skipif(
     not settings.jwt_secret,
@@ -23,6 +23,7 @@ requires_secret = pytest.mark.skipif(
 
 
 class TestLoginSuccess:
+    @pytest.mark.smoke
     def test_admin_login_returns_bearer_token(self, anonymous_client, admin_user):
         response = anonymous_client.login(admin_user.username, admin_user.password)
 

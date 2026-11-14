@@ -1,4 +1,4 @@
-"""Audit trail: which events every business action leaves behind."""
+﻿"""Audit trail: which events every business action leaves behind."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ import pytest
 
 from utils.assertions import assert_page, assert_problem, assert_status
 
-pytestmark = pytest.mark.api
+pytestmark = [pytest.mark.api, pytest.mark.regression]
 
 
 def _audit(agent_client, ticket_id: int, size: int = 50) -> list[dict]:
