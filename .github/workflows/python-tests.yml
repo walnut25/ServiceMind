@@ -1,4 +1,4 @@
-name: python-automation-tests
+﻿name: python-automation-tests
 
 # Independent workflow: the existing ci.yml (Maven, frontend, container builds)
 # is untouched, so a failing UI job can never hide the backend results.
@@ -135,8 +135,11 @@ jobs:
         if: always()
         run: docker compose down -v
 
+  # Keeps the built-in static server honest with a fast gate. Full UI regression
+  # runs against the nginx-served production bundle in python-ui-prod-test, so the
+  # 27 cases are not executed twice per run for no extra signal.
   python-ui-test:
-    name: UI automation (Playwright)
+    name: UI smoke (built-in static server)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -183,8 +186,8 @@ jobs:
           docker compose logs --no-color --tail=200 app
           exit 1
 
-      - name: Run UI tests
-        run: pytest tests/ui -q --alluredir=allure-results-ui
+      - name: Run UI smoke tests (built-in static server)
+        run: pytest tests/ui -m smoke -q --alluredir=allure-results-ui
         env:
           API_BASE_URL: http://127.0.0.1:8081
           FRONTEND_DIST: frontend/dist
