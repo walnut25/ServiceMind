@@ -1,4 +1,4 @@
-﻿name: python-automation-tests
+name: python-automation-tests
 
 # Independent workflow: the existing ci.yml (Maven, frontend, container builds)
 # is untouched, so a failing UI job can never hide the backend results.
@@ -292,3 +292,43 @@ jobs:
       - name: Tear down
         if: always()
         run: docker compose down -v
+
+  # Combines the Allure results of every Python job into one HTML report, so the
+  # report can be opened from the run page instead of downloading raw JSON.
+  # Runs even when a suite failed: the failures are what the report is for.
+  allure-report:
+    name: Allure HTML report
+    runs-on: ubuntu-latest
+    needs: [python-unit-test, python-api-test, python-ui-test, python-ui-prod-test]
+    if: always()
+    timeout-minutes: 15
+    steps:
+      - name: Download Allure results from all jobs
+        uses: actions/download-artifact@v4
+        with:
+          pattern: allure-results-*
+          path: allure-results
+          merge-multiple: true
+
+      - name: Set up Java for Allure
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Node for allure-commandline
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Generate the HTML report
+        run: |
+          npm install --no-save --no-audit --no-fund allure-commandline@2.46.1
+          npx allure generate allure-results -o allure-report --clean
+
+      - name: Upload the HTML report
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report
+          path: allure-report/
+          retention-days: 14
