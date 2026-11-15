@@ -98,7 +98,10 @@ UI_EXTERNAL_SERVER=true UI_BASE_URL=http://127.0.0.1:8085 \
 API_BASE_URL=http://127.0.0.1:8081 pytest tests/ui -q
 ```
 
-CI runs both variants: `python-ui-test` (built-in server) and `python-ui-prod-test` (nginx).
+CI runs both variants, without executing the 27 cases twice for no extra signal: `python-ui-test`
+runs the 2-case `smoke` subset against the built-in server (a fast check that the harness still
+works), and `python-ui-prod-test` runs the full 27 against nginx. A final `allure-report` job merges
+every job's Allure results into one HTML report artifact.
 
 ## Browser modes
 

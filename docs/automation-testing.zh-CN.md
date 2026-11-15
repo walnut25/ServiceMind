@@ -179,7 +179,8 @@ allure generate allure-results -o allure-report --clean
 ```
 
 报告包含总数、成功/失败/跳过、耗时、用例名与步骤、失败堆栈；UI 用例失败时保留截图与浏览器日志。
-`allure` 命令需要 Java 8+，`allure-commandline` 不是 Python 依赖。
+`allure` 命令需要 Java 8+，`allure-commandline` 不是 Python 依赖。CI 会把四个测试 Job 的结果合并、
+生成 HTML 并作为 `allure-report` 产物发布，不需要本地运行即可打开。
 
 ## 9. 持续集成
 
@@ -190,10 +191,12 @@ allure generate allure-results -o allure-report --clean
 | --- | --- | --- |
 | `python-unit-test` | 安装依赖 → `pytest tests/unit -n auto` | Allure 结果 |
 | `python-api-test` | 构建后端镜像 → 起 MySQL 与应用 → 等健康 → 并行 `pytest tests/api -m "not serial" -n auto`，再跑 `pytest tests/api -m serial` | Allure 结果、测试日志 |
-| `python-ui-test` | 安装 Chromium → 构建前端 → 起 MySQL 与应用 → `pytest tests/ui` | Allure 结果、失败截图与日志 |
-| `python-ui-prod-test` | 构建前后端镜像 → `docker compose up -d --wait` → 校验 SPA/深链/API 代理 → 对 nginx 跑 `pytest tests/ui` | Allure 结果、失败截图与日志 |
+| `python-ui-test` | 安装 Chromium → 构建前端 → 起 MySQL 与应用 → 对内置静态服务跑 `pytest tests/ui -m smoke` | Allure 结果、失败截图与日志 |
+| `python-ui-prod-test` | 构建前后端镜像 → `docker compose up -d --wait` → 校验 SPA/深链/API 代理 → 对 nginx 跑完整 `pytest tests/ui` | Allure 结果、失败截图与日志 |
+| `allure-report` | 汇总所有 `allure-results-*` 产物并生成 HTML 报告 | `allure-report` 产物 |
 
-两个依赖容器的 API/UI Job 失败时都会打印容器日志，并且总是用 `docker compose down -v` 收尾。
+UI 用例不会在一轮里重复执行两遍：内置静态服务只跑 2 条 `smoke`，完整的 27 条跑在 nginx 提供的
+生产构建上。两个依赖容器的 Job 失败时都会打印容器日志，并且总是用 `docker compose down -v` 收尾。
 
 ## 10. 生产前端回归
 
@@ -210,7 +213,7 @@ allure generate allure-results -o allure-report --clean
 4. 用 `UI_EXTERNAL_SERVER=true` 和 `UI_BASE_URL=http://127.0.0.1:8085` 运行同一套 27 条 UI 用例，
    两个 Job 之间没有任何测试代码差异。
 
-原有 `python-ui-test` 保持不变；两套变体会并行存在，直到 nginx Job 积累足够的稳定记录。
+原有 `python-ui-test` 保留内置静态服务的 2 条 `smoke` 校验；完整 27 条在这里、对真正部署的产物执行。
 
 ## 故障排查
 
