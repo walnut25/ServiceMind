@@ -6,9 +6,9 @@ This guide describes the standalone Python suite under `tests/`. It verifies the
 the way a client sees it: real HTTP requests, a real MySQL database, and a real browser. It never
 mocks application logic and never imports Java classes.
 
-The suite contains **276 tests**:
+The suite contains **288 tests**:
 
-- **97 framework unit tests** (`tests/unit/`) that validate the test framework itself and need no
+- **109 framework unit tests** (`tests/unit/`) that validate the test framework itself and need no
   backend, database or browser;
 - **179 business tests**: 152 API tests and 27 UI tests.
 
@@ -26,7 +26,7 @@ Run every command from the repository root.
 ```text
 tests/
 ├── config/settings.py      # single configuration entry point (env or .env)
-├── unit/                   # 97 framework tests: ApiClient, settings, assertions, data factory, UI fixtures
+├── unit/                   # 109 framework tests: ApiClient, settings, assertions, data factory, UI fixtures
 ├── api/                    # 152 black-box HTTP tests, one file per business area
 ├── ui/                     # 27 Playwright browser tests
 ├── fixtures/               # authentication, users, tickets/articles, browser and SPA server
@@ -115,18 +115,18 @@ cd frontend; npm ci; npm run build; cd ..
 Run the suites:
 
 ```powershell
-pytest tests/unit -q                     # 97 framework tests, no backend needed
+pytest tests/unit -q                     # 109 framework tests, no backend needed
 pytest tests/api -v                      # 152 API tests
 pytest tests/api/test_tickets.py -v      # one module
 pytest tests/ui -v                       # 27 UI tests
-pytest tests -q                          # all 276 tests
+pytest tests -q                          # all 288 tests
 pytest tests -m smoke -q                 # 8 critical-path cases
 ```
 
 Expected result:
 
 ```text
-276 passed
+288 passed
 ```
 
 ### Parallel runs
@@ -201,13 +201,14 @@ it. Three independent jobs mean a UI failure never hides the API or unit result.
 | --- | --- | --- |
 | `python-unit-test` | install dependencies, `pytest tests/unit -n auto` | Allure results |
 | `python-api-test` | build the backend image, start MySQL and the app, wait for health, parallel `pytest tests/api -m "not serial" -n auto`, then `pytest tests/api -m serial` | Allure results, test logs |
-| `python-ui-test` | install Chromium, build the frontend, start MySQL and the app, `pytest tests/ui -m smoke` against the built-in server | Allure results, failure screenshots and logs |
-| `python-ui-prod-test` | build both images, `docker compose up -d --wait`, verify SPA + deep link + API proxy, full `pytest tests/ui` against nginx | Allure results, failure screenshots and logs |
+| `python-ui-prod-test` | build both images, `docker compose up -d --wait`, verify SPA + deep link + API proxy, `pytest tests/ui` against nginx | Allure results, failure screenshots and logs |
 | `allure-report` | download every `allure-results-*` artifact, generate the HTML report | `allure-report` artifact |
+| `deploy-report` | publish that report to GitHub Pages on pushes to `main` | Pages site |
 
-The UI cases are not executed twice per run: the built-in server gets the 2-case `smoke` subset, while
-the full 27 run against the nginx-served production bundle. The two container-backed jobs dump
-container logs when something fails and always tear the stack down with `docker compose down -v`.
+The UI cases run once per pipeline, against the nginx-served production bundle. The built-in static
+server is a local testing convenience, so it is covered by 12 unit tests instead of a second browser
+job. The container-backed jobs dump container logs when something fails and always tear the stack down
+with `docker compose down -v`.
 
 ## 10. Production frontend regression
 
@@ -225,8 +226,9 @@ That job:
 4. runs the same 27 UI tests with `UI_EXTERNAL_SERVER=true` and `UI_BASE_URL=http://127.0.0.1:8085`,
    so no test code differs between the two jobs.
 
-The existing `python-ui-test` job keeps the built-in static server honest with the 2-case `smoke`
-subset; the full 27 cases run here, against the artifact that is deployed.
+The built-in static server is not part of the deployment, so it is not exercised in a browser job; 12
+unit tests cover its static serving, history fallback and proxying instead. The full 27 cases run
+against the artifact that is deployed, and the generated report is published to GitHub Pages on `main`.
 
 ## Troubleshooting
 

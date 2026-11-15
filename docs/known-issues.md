@@ -100,6 +100,7 @@ were real, not because they were business bugs; all are fixed and covered by `te
 | The backend health gate was session-autouse for every test | Framework unit tests could not run without a backend | The gate moved into `tests/api/conftest.py` and `tests/ui/conftest.py`; `tests/unit` runs standalone |
 | The knowledge listing test assumed the article it just published lands on page one of a 100-item page | It failed as soon as the database held more published articles than one page, and parallel runs made that frequent | Visibility is verified through the unique-token search; the "no drafts in the list" and "all rows published" assertions stay |
 | The metrics test asserted consistency across six queries that run at different moments | A concurrent write could break `sum(byStatus) == total`, and parallelising the suite made it deterministic | The test is marked `serial`, fails loudly under xdist (`require_no_xdist`), and CI runs it in its own phase |
+| CI ran the full UI suite twice (static server and nginx) | Half of the browser time carried no extra signal, and the static server is not a deployed artifact | The static server is covered by 12 unit tests; the 27 UI cases run once, against nginx |
 
 Two further inconsistencies were corrected at the same time: the built-in UI server now honours
 `UI_PORT` instead of binding an arbitrary port while the docs claimed `8090`, and the suite can point

@@ -5,9 +5,9 @@
 本手册说明 `tests/` 下独立的 Python 测试工程。它从客户端视角验证运行中的应用：真实 HTTP 请求、真实
 MySQL 数据库、真实浏览器；不 Mock 业务逻辑，也不引用 Java 内部类。
 
-套件共 **276 条用例**：
+套件共 **288 条用例**：
 
-- **97 条框架单元测试**（`tests/unit/`），验证测试框架自身，不需要后端、数据库或浏览器；
+- **109 条框架单元测试**（`tests/unit/`），验证测试框架自身，不需要后端、数据库或浏览器；
 - **179 条业务测试**：152 条 API、27 条 UI。
 
 ## 前置条件
@@ -24,7 +24,7 @@ MySQL 数据库、真实浏览器；不 Mock 业务逻辑，也不引用 Java �
 ```text
 tests/
 ├── config/settings.py      # 唯一配置入口（环境变量或 .env）
-├── unit/                   # 97 条框架测试：ApiClient、配置、断言、数据工厂、UI fixture
+├── unit/                   # 109 条框架测试：ApiClient、配置、断言、数据工厂、UI fixture
 ├── api/                    # 152 条黑盒 HTTP 用例，一个文件一个业务域
 ├── ui/                     # 27 条 Playwright 浏览器用例
 ├── fixtures/               # 认证、用户、工单/文章、浏览器与 SPA 服务
@@ -110,18 +110,18 @@ cd frontend; npm ci; npm run build; cd ..
 运行套件：
 
 ```powershell
-pytest tests/unit -q                     # 97 条框架测试，无需后端
+pytest tests/unit -q                     # 109 条框架测试，无需后端
 pytest tests/api -v                      # 152 条 API 用例
 pytest tests/api/test_tickets.py -v      # 单个模块
 pytest tests/ui -v                       # 27 条 UI 用例
-pytest tests -q                          # 全部 276 条
+pytest tests -q                          # 全部 288 条
 pytest tests -m smoke -q                 # 8 条关键路径用例
 ```
 
 预期结果：
 
 ```text
-276 passed
+288 passed
 ```
 
 ### 并行执行
@@ -191,12 +191,13 @@ allure generate allure-results -o allure-report --clean
 | --- | --- | --- |
 | `python-unit-test` | 安装依赖 → `pytest tests/unit -n auto` | Allure 结果 |
 | `python-api-test` | 构建后端镜像 → 起 MySQL 与应用 → 等健康 → 并行 `pytest tests/api -m "not serial" -n auto`，再跑 `pytest tests/api -m serial` | Allure 结果、测试日志 |
-| `python-ui-test` | 安装 Chromium → 构建前端 → 起 MySQL 与应用 → 对内置静态服务跑 `pytest tests/ui -m smoke` | Allure 结果、失败截图与日志 |
 | `python-ui-prod-test` | 构建前后端镜像 → `docker compose up -d --wait` → 校验 SPA/深链/API 代理 → 对 nginx 跑完整 `pytest tests/ui` | Allure 结果、失败截图与日志 |
 | `allure-report` | 汇总所有 `allure-results-*` 产物并生成 HTML 报告 | `allure-report` 产物 |
+| `deploy-report` | 在 `main` 的 push 上把报告发布到 GitHub Pages | Pages 站点 |
 
-UI 用例不会在一轮里重复执行两遍：内置静态服务只跑 2 条 `smoke`，完整的 27 条跑在 nginx 提供的
-生产构建上。两个依赖容器的 Job 失败时都会打印容器日志，并且总是用 `docker compose down -v` 收尾。
+UI 用例每轮只执行一次，跑在 nginx 提供的生产构建上。内置静态服务只是本地测试脚手架，因此改用
+12 条单元测试覆盖，不再占用一个浏览器 Job。依赖容器的 Job 失败时会打印容器日志，并且总是用
+`docker compose down -v` 收尾。
 
 ## 10. 生产前端回归
 
@@ -213,7 +214,8 @@ UI 用例不会在一轮里重复执行两遍：内置静态服务只跑 2 条 `
 4. 用 `UI_EXTERNAL_SERVER=true` 和 `UI_BASE_URL=http://127.0.0.1:8085` 运行同一套 27 条 UI 用例，
    两个 Job 之间没有任何测试代码差异。
 
-原有 `python-ui-test` 保留内置静态服务的 2 条 `smoke` 校验；完整 27 条在这里、对真正部署的产物执行。
+内置静态服务不属于部署产物，因此不再用浏览器 Job 验证；改用 12 条单元测试覆盖它的静态服务、历史
+回退与代理行为。完整 27 条跑在真正部署的产物上，生成的报告会在 `main` 上发布到 GitHub Pages。
 
 ## 故障排查
 

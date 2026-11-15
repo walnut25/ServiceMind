@@ -2,10 +2,10 @@
 
 [English](test-cases.md) | [简体中文](test-cases.zh-CN.md)
 
-**276 tests** in total: 97 framework unit tests and 179 business tests (152 API + 27 UI). Names state
+**288 tests** in total: 109 framework unit tests and 179 business tests (152 API + 27 UI). Names state
 the intent: `test_<behaviour>_<expectation>`.
 
-## Framework unit tests (97)
+## Framework unit tests (109)
 
 These validate the test framework itself. They need no backend, database or browser and run in a few
 hundred milliseconds, so a mistake in the ApiClient or a fixture is caught before the business suites
@@ -46,6 +46,15 @@ article payload shape and uniqueness; user payload role forwarding and explicit 
 Page registry: track/untrack, idempotent tracking, unknown page removal, no growth across 20 simulated
 tests; screenshots: capture open pages, skip closed pages, numbering for multiple pages, a broken page
 does not mask the failure, capture can be disabled.
+
+### `unit/test_ui_server.py` — 12 tests
+
+The static SPA server that the UI tests use locally: serves `index.html` and assets, returns 404 for a
+missing asset instead of the history fallback, answers `/tickets/1`, `/knowledge` and `/tickets/12?tab=audit`
+with `index.html`, forwards GET/POST/`/actuator` requests to the backend (body and `Authorization`
+included), returns 502 when the backend is unreachable, rejects `url` before `start()`, and fails with a
+clear message when `frontend/dist` does not exist. These replace the browser-based smoke job that used
+to run two UI cases only to keep the harness honest.
 
 ## API (152)
 
@@ -147,10 +156,10 @@ lands on 403; AGENT can open the editor; an unknown route renders the 404 page.
 ## Running a subset
 
 ```bash
-pytest tests/unit -q                       # 97 framework tests
+pytest tests/unit -q                       # 109 framework tests
 pytest tests/api/test_auth.py -v           # 25
 pytest tests/api -v                        # 152
 pytest tests/ui -v                         # 27
 pytest tests -m smoke -q                   # 8
-pytest tests -q                            # 276
+pytest tests -q                            # 288
 ```

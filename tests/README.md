@@ -4,8 +4,8 @@ A standalone Python project that sits next to the Java `src/main` and `src/test`
 running application over HTTP and a real browser, never mocks business logic, and never modifies
 application code.
 
-- **276 tests** in total
-  - **97 framework unit tests** (`tests/unit/`) — validate the test framework itself, need no backend
+- **288 tests** in total
+  - **109 framework unit tests** (`tests/unit/`) — validate the test framework itself, need no backend
   - **179 business tests** — 152 API + 27 UI
 - **Three ways to run**: pytest locally, Docker Compose, GitHub Actions
 - **Reporting**: Allure (totals, duration, steps, failure stack traces, UI screenshots)
@@ -26,10 +26,10 @@ python -m playwright install chromium    # browser for the UI tests
 copy tests\.env.example tests\.env
 
 # 4) Run
-pytest tests/unit -q                     # 97 framework tests, no backend needed
+pytest tests/unit -q                     # 109 framework tests, no backend needed
 pytest tests/api -v                      # 152 API tests
 pytest tests/ui -v                       # 27 browser tests (build frontend first)
-pytest tests -q                          # all 276
+pytest tests -q                          # all 288
 pytest tests -m smoke -q                 # 8-test critical-path subset
 ```
 
@@ -44,7 +44,7 @@ cd frontend && npm ci && npm run build && cd ..
 ```text
 tests/
 ├── config/settings.py      # single configuration entry point (env or .env)
-├── unit/                   # 97 framework tests: ApiClient, settings, assertions, data factory, UI fixtures
+├── unit/                   # 109 framework tests: ApiClient, settings, assertions, data factory, fixtures, static server
 ├── api/                    # 152 black-box HTTP tests, one file per business area
 ├── ui/                     # 27 Playwright tests
 ├── fixtures/               # authentication, users, tickets/articles, browser and SPA server
@@ -98,10 +98,11 @@ UI_EXTERNAL_SERVER=true UI_BASE_URL=http://127.0.0.1:8085 \
 API_BASE_URL=http://127.0.0.1:8081 pytest tests/ui -q
 ```
 
-CI runs both variants, without executing the 27 cases twice for no extra signal: `python-ui-test`
-runs the 2-case `smoke` subset against the built-in server (a fast check that the harness still
-works), and `python-ui-prod-test` runs the full 27 against nginx. A final `allure-report` job merges
-every job's Allure results into one HTML report artifact.
+CI runs the 27 UI cases once, against the nginx-served production bundle (`python-ui-prod-test`). The
+built-in static server is a local convenience, not a deployed artifact, so it is covered by the 12 unit
+tests in `tests/unit/test_ui_server.py` instead of a second browser job. A final `allure-report` job
+merges every job's results into one HTML report, and `deploy-report` publishes it to GitHub Pages on
+pushes to `main`.
 
 ## Browser modes
 
@@ -136,6 +137,6 @@ already-running frontend, such as the nginx container, set `UI_EXTERNAL_SERVER=t
 ## Documentation
 
 - [Automation guide](../docs/automation-testing.md): architecture, data strategy, Docker, Allure, CI, troubleshooting
-- [Test case catalog](../docs/test-cases.md): the 179 business cases plus the 97 framework cases
+- [Test case catalog](../docs/test-cases.md): the 179 business cases plus the 109 framework cases
 - [Known issues](../docs/known-issues.md): behaviour proven by tests and mismatches found in the docs
 - [Interview guide](../docs/interview-guide.md): how to present the project

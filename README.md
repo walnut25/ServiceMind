@@ -1,4 +1,4 @@
-# Smart Service
+﻿# Smart Service
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
@@ -200,7 +200,7 @@ five-minute demo flow, and answers to common design questions.
 ### Python automation suite
 
 `tests/` contains a standalone Python suite that drives the running application over HTTP and a real
-browser: 276 tests in total — 97 framework unit tests plus 179 business tests (152 API + 27 Playwright
+browser: 288 tests in total — 109 framework unit tests plus 179 business tests (152 API + 27 Playwright
 UI) — with Allure reporting and its own GitHub Actions workflow that runs in parallel with the CI above.
 
 ```bash

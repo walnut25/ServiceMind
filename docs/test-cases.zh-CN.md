@@ -2,10 +2,10 @@
 
 [English](test-cases.md) | [简体中文](test-cases.zh-CN.md)
 
-共 **276** 条：97 条框架单元测试 + 179 条业务测试（152 API + 27 UI）。用例名即意图
+共 **288** 条：109 条框架单元测试 + 179 条业务测试（152 API + 27 UI）。用例名即意图
 （`test_<行为>_<预期>`）。
 
-## 框架单元测试（97）
+## 框架单元测试（109）
 
 这些用例验证测试框架自身。它们不需要后端、数据库或浏览器，几百毫秒内跑完，因此 ApiClient 或
 fixture 的错误会先在这里暴露，而不是等到业务套件报出难以理解的错误。
@@ -41,6 +41,13 @@ fixture 的错误会先在这里暴露，而不是等到业务套件报出难以
 
 页面登记：登记/注销、重复登记幂等、注销未知页面安全、模拟 20 条用例后不增长；截图：采集未关闭页面、
 跳过已关闭页面、多页面编号、单个页面截图异常不影响失败上报、可关闭截图。
+
+### `unit/test_ui_server.py` — 12 条
+
+UI 测试本地使用的静态 SPA 服务：提供 `index.html` 与静态资源；缺失资源返回 404 而不是回退到首页；
+`/tickets/1`、`/knowledge`、`/tickets/12?tab=audit` 回退到 `index.html`；GET/POST 与 `/actuator`
+请求被转发到后端（含请求体与 `Authorization`）；后端不可达返回 502；未启动时访问 `url` 报错；
+`frontend/dist` 不存在时给出明确报错。这些用例取代了此前"只跑两条浏览器用例来保证脚手架可用"的 Job。
 
 ## API（152）
 
@@ -132,10 +139,10 @@ REQUESTER 访问 `/admin/users` 或 `/knowledge/new` 落到 403；AGENT 可打�
 ## 运行子集
 
 ```bash
-pytest tests/unit -q                       # 97 条框架测试
+pytest tests/unit -q                       # 109 条框架测试
 pytest tests/api/test_auth.py -v           # 25
 pytest tests/api -v                        # 152
 pytest tests/ui -v                         # 27
 pytest tests -m smoke -q                   # 8
-pytest tests -q                            # 276
+pytest tests -q                            # 288
 ```
