@@ -1,4 +1,4 @@
-﻿"""Knowledge base: article lifecycle, visibility rules and full-text search."""
+"""Knowledge base: article lifecycle, visibility rules and full-text search."""
 
 from __future__ import annotations
 
@@ -88,15 +88,23 @@ class TestVisibility:
     def test_listing_only_returns_published_articles(self, agent_client, article_factory):
         draft = article_factory(publish=False)
         published = article_factory(publish=True)
+        token = published["title"].split()[-1]
 
         response = agent_client.get("/knowledge/articles", params={"size": 100})
 
         assert_status(response, 200)
         body = assert_schema(response, page_of(ARTICLE_SCHEMA))
         ids = {row["id"] for row in body["content"]}
-        assert published["id"] in ids
         assert draft["id"] not in ids, "drafts must never appear in the public list"
         assert all(row["status"] == "PUBLISHED" for row in body["content"])
+
+        # The list endpoint has no title filter, so verify the published article is
+        # reachable by its unique token instead of assuming it lands on page one.
+        # A fixed page size makes that assumption fail as soon as the database
+        # holds more published articles than one page.
+        hits = agent_client.get("/knowledge/articles/search", params={"query": token, "size": 20})
+        assert_status(hits, 200)
+        assert published["id"] in {row["id"] for row in hits.json()["content"]}
 
     def test_unknown_article_returns_404(self, requester_client):
         response = requester_client.get("/knowledge/articles/99999999")

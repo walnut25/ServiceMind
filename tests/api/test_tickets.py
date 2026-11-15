@@ -8,6 +8,7 @@ import pytest
 
 from utils.assertions import assert_page, assert_problem, assert_schema, assert_status
 from utils.data_factory import ticket_payload
+from utils.guards import require_no_xdist
 from schemas.definitions import METRICS_SCHEMA, TICKET_SCHEMA, page_of
 
 pytestmark = [pytest.mark.api, pytest.mark.regression]
@@ -178,7 +179,14 @@ class TestFiltering:
 
 
 class TestMetrics:
-    def test_metrics_shape_consistent_with_buckets(self, agent_client):
+    # Six independent queries build this response, so a concurrent write between
+    # them can legitimately break sum(byStatus)==total. The test is not relaxed:
+    # it refuses to run under xdist (require_no_xdist) and CI executes it in its
+    # own phase, after the parallel run.
+    @pytest.mark.serial
+    def test_metrics_shape_consistent_with_buckets(self, agent_client, request):
+        require_no_xdist(request)
+
         response = agent_client.get("/tickets/metrics")
 
         assert_status(response, 200)
