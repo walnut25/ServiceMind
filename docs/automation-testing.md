@@ -129,6 +129,19 @@ Expected result:
 276 passed
 ```
 
+### Parallel runs
+
+`tests/unit` and `tests/api` are xdist-safe. One API test cannot be: `TestMetrics` assembles a single
+response from six independent queries, so a concurrent write can break `sum(byStatus) == total`. It is
+marked `serial` and fails loudly if an xdist worker collects it, so a parallel run never silently
+executes it. Use two phases:
+
+```powershell
+pytest tests/api -m "not serial" -n auto   # 151 tests
+pytest tests/api -m serial                 # 1 test, alone
+pytest tests/unit -n auto                  # framework tests
+```
+
 The UI tests use Playwright's bundled Chromium by default. To reuse an installed browser:
 
 ```powershell
@@ -184,12 +197,32 @@ it. Three independent jobs mean a UI failure never hides the API or unit result.
 
 | Job | Steps | Artifacts |
 | --- | --- | --- |
-| `python-unit-test` | install dependencies, `pytest tests/unit` | Allure results |
-| `python-api-test` | build the backend image, start MySQL and the app, wait for health, `pytest tests/api` | Allure results, test logs |
+| `python-unit-test` | install dependencies, `pytest tests/unit -n auto` | Allure results |
+| `python-api-test` | build the backend image, start MySQL and the app, wait for health, parallel `pytest tests/api -m "not serial" -n auto`, then `pytest tests/api -m serial` | Allure results, test logs |
 | `python-ui-test` | install Chromium, build the frontend, start MySQL and the app, `pytest tests/ui` | Allure results, failure screenshots and logs |
+| `python-ui-prod-test` | build both images, `docker compose up -d --wait`, verify SPA + deep link + API proxy, `pytest tests/ui` against nginx | Allure results, failure screenshots and logs |
 
-The two container-backed jobs dump container logs when something fails and always tear the stack down
-with `docker compose down -v`.
+The two container-backed API/UI jobs dump container logs when something fails and always tear the
+stack down with `docker compose down -v`.
+
+## 10. Production frontend regression
+
+`python-ui-test` serves `frontend/dist` from the built-in static server, which keeps the browser tests
+fast and independent of Docker. `python-ui-prod-test` covers the other half: the image that is actually
+deployed (`frontend/Dockerfile` -> `nginx:1.27-alpine`, with `frontend/nginx.conf`).
+
+That job:
+
+1. builds `app` and `frontend` with `docker compose build`;
+2. starts the stack with `docker compose up -d --wait --wait-timeout 240`, which relies on the
+   healthchecks of all three services (the frontend gained one in this change);
+3. asserts that nginx serves the SPA, that `/tickets/1` falls back to `index.html`, and that
+   `/actuator/health` is proxied to the backend;
+4. runs the same 27 UI tests with `UI_EXTERNAL_SERVER=true` and `UI_BASE_URL=http://127.0.0.1:8085`,
+   so no test code differs between the two jobs.
+
+The existing `python-ui-test` job is untouched; both variants run until the nginx job has a longer
+history of green runs.
 
 ## Troubleshooting
 

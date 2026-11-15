@@ -85,6 +85,8 @@
 | `UI_BROWSER_CHANNEL` 默认 `chrome`，而文档写的是"安装 Chromium 即可" | 按文档操作的新检出让然需要系统 Chrome | 默认改为空值（自带 Chromium）；`chrome`/`msedge` 变成显式选择 |
 | 截图与日志目录固定在仓库内 | 只读检出下失败产物被静默丢弃 | `QA_SCREENSHOT_DIR` 与 `QA_LOG_DIR` 可覆盖位置；无法创建时记录警告并继续 |
 | 后端健康门禁是全局 autouse | 框架单元测试无法脱离后端运行 | 门禁下放到 `tests/api/conftest.py` 与 `tests/ui/conftest.py`，`tests/unit` 独立运行 |
+| 知识库列表用例假设刚发布的文章必在第 100 条分页内 | 数据库里已发布文章超过一页就会失败，并行执行时更容易触发 | 改为用唯一 token 检索验证可见性；"列表无草稿"和"全部为已发布"的断言保留 |
+| 指标用例在六个不同时刻的查询之间断言一致性 | 并发写入会打破 `sum(byStatus) == total`，并行化后必然复现 | 标记 `serial` + `require_no_xdist` 硬失败 + CI 独立阶段执行 |
 
 同时修正了两处不一致：内置 UI 静态服务现在遵循 `UI_PORT`（此前随机端口、文档却写 8090），以及新增
 `UI_EXTERNAL_SERVER` 以复用已在运行的前端。
