@@ -124,6 +124,18 @@ pytest tests -m smoke -q                 # 8 条关键路径用例
 276 passed
 ```
 
+### 并行执行
+
+`tests/unit` 与 `tests/api` 可以安全并行。只有一条 API 用例不行：`TestMetrics` 用六次独立查询拼出
+同一个响应，并发写入会打破 `sum(byStatus) == total`。它被标记为 `serial`，一旦被 xdist worker
+收集就会**硬失败**，因此并行运行绝不会悄悄跳过它。分两阶段执行：
+
+```powershell
+pytest tests/api -m "not serial" -n auto   # 151 条
+pytest tests/api -m serial                 # 1 条，单独执行
+pytest tests/unit -n auto                  # 框架测试
+```
+
 UI 用例默认使用 Playwright 自带 Chromium。要复用已安装的浏览器：
 
 ```powershell
@@ -176,11 +188,29 @@ allure generate allure-results -o allure-report --clean
 
 | Job | 步骤 | 产物 |
 | --- | --- | --- |
-| `python-unit-test` | 安装依赖 → `pytest tests/unit` | Allure 结果 |
-| `python-api-test` | 构建后端镜像 → 起 MySQL 与应用 → 等健康 → `pytest tests/api` | Allure 结果、测试日志 |
+| `python-unit-test` | 安装依赖 → `pytest tests/unit -n auto` | Allure 结果 |
+| `python-api-test` | 构建后端镜像 → 起 MySQL 与应用 → 等健康 → 并行 `pytest tests/api -m "not serial" -n auto`，再跑 `pytest tests/api -m serial` | Allure 结果、测试日志 |
 | `python-ui-test` | 安装 Chromium → 构建前端 → 起 MySQL 与应用 → `pytest tests/ui` | Allure 结果、失败截图与日志 |
+| `python-ui-prod-test` | 构建前后端镜像 → `docker compose up -d --wait` → 校验 SPA/深链/API 代理 → 对 nginx 跑 `pytest tests/ui` | Allure 结果、失败截图与日志 |
 
-两个依赖容器的 Job 失败时都会打印容器日志，并且总是用 `docker compose down -v` 收尾。
+两个依赖容器的 API/UI Job 失败时都会打印容器日志，并且总是用 `docker compose down -v` 收尾。
+
+## 10. 生产前端回归
+
+`python-ui-test` 用内置静态服务提供 `frontend/dist`，让浏览器测试保持快速且不依赖 Docker；
+`python-ui-prod-test` 覆盖另一半：真正部署的镜像（`frontend/Dockerfile` → `nginx:1.27-alpine`，
+配置在 `frontend/nginx.conf`）。
+
+该 Job 会：
+
+1. 用 `docker compose build` 构建 `app` 与 `frontend`；
+2. 用 `docker compose up -d --wait --wait-timeout 240` 启动整套栈，依赖三个服务各自的健康检查
+   （前端健康检查是本次新增的）；
+3. 断言 nginx 能提供 SPA、`/tickets/1` 会回退到 `index.html`、`/actuator/health` 被代理到后端；
+4. 用 `UI_EXTERNAL_SERVER=true` 和 `UI_BASE_URL=http://127.0.0.1:8085` 运行同一套 27 条 UI 用例，
+   两个 Job 之间没有任何测试代码差异。
+
+原有 `python-ui-test` 保持不变；两套变体会并行存在，直到 nginx Job 积累足够的稳定记录。
 
 ## 故障排查
 

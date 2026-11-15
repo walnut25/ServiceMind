@@ -49,6 +49,10 @@ does not mask the failure, capture can be disabled.
 
 ## API (152)
 
+One case, `TestMetrics::test_metrics_shape_consistent_with_buckets`, is marked `serial`: it is excluded
+from the parallel phase and executed on its own, because the response it validates is assembled from
+six independent queries. See the [automation guide](automation-testing.md#parallel-runs).
+
 ### `api/test_auth.py` — 25 tests
 
 | Group | Coverage |

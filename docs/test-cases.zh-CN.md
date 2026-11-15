@@ -44,6 +44,9 @@ fixture 的错误会先在这里暴露，而不是等到业务套件报出难以
 
 ## API（152）
 
+其中 `TestMetrics::test_metrics_shape_consistent_with_buckets` 标记为 `serial`：它验证的响应由六次
+独立查询拼成，因此被排除在并行阶段之外、单独执行。见[自动化测试手册](automation-testing.zh-CN.md#并行执行)。
+
 ### `api/test_auth.py` — 25 条
 
 | 分组 | 覆盖点 |

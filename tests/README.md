@@ -67,6 +67,38 @@ framework's own contracts, so a change in the ApiClient or the data factory fail
 | `smoke` | 8 critical-path cases for a quick gate | `pytest tests -m smoke` |
 | `regression` | Everything in the business suites | `pytest tests/api tests/ui -m regression` |
 | `security` | Authorization boundaries | `pytest tests -m security` |
+| `serial` | Cannot run next to writes; executed alone | see below |
+
+## Parallel execution
+
+`tests/unit` and `tests/api` are xdist-safe: every test creates its own data and no test reads a
+value another test writes. One API test is the exception by design - `TestMetrics` builds a single
+response from six independent queries, so a concurrent write can legitimately break
+`sum(byStatus) == total`.
+
+That test is marked `serial` and calls `require_no_xdist()`, which **fails** (not skips) when an
+xdist worker collects it, with the exact command to use. Run the API suite in two phases:
+
+```bash
+pytest tests/api -m "not serial" -n auto     # parallel, 151 tests
+pytest tests/api -m serial                   # alone, 1 test
+```
+
+The unit suite runs in under a second; `-n auto` adds process startup and is only worth it when the
+suite grows. CI still uses `-n auto` for both so the parallel path stays covered.
+
+## Production frontend regression
+
+The 27 UI tests can also run against the real deployment shape (`frontend/Dockerfile` -> nginx with
+the history fallback and `/api` proxy) instead of the built-in static server:
+
+```bash
+docker compose up -d --wait mysql app frontend
+UI_EXTERNAL_SERVER=true UI_BASE_URL=http://127.0.0.1:8085 \
+API_BASE_URL=http://127.0.0.1:8081 pytest tests/ui -q
+```
+
+CI runs both variants: `python-ui-test` (built-in server) and `python-ui-prod-test` (nginx).
 
 ## Browser modes
 
